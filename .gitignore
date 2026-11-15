@@ -78,8 +78,8 @@ next-env.d.ts
 # ------------------------------------------------------------------------------
 # 3. Media Uploads & Runtime Storage
 # ------------------------------------------------------------------------------
-src/Backend/Presentation/Clinic.WebAPI/wwwroot/uploads/*
-!src/Backend/Presentation/Clinic.WebAPI/wwwroot/uploads/.gitkeep
+Backend/Presentation/Clinic.WebAPI/wwwroot/uploads/*
+!Backend/Presentation/Clinic.WebAPI/wwwroot/uploads/.gitkeep
 
 # ------------------------------------------------------------------------------
 # 4. OS & System Files
