@@ -69,13 +69,13 @@ export default function AppointmentForm({
 
   return (
     <div
-      className={`bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/80 shadow-md ${className}`}
+      className={`bg-white rounded-3xl p-6 sm:p-8 border border-bronze-200/80 shadow-md ${className}`}
     >
       <div className="mb-5">
-        <h3 className="text-lg font-serif font-bold text-slate-900">
+        <h3 className="text-lg font-serif font-bold text-espresso-900">
           Randevu & Bilgi Formu
         </h3>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-espresso-800/70 mt-1">
           Bilgilerinizi bırakın, klinik asistanımız en kısa sürede size dönüş
           yapsın.
         </p>
@@ -109,7 +109,7 @@ export default function AppointmentForm({
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-espresso-800 mb-1">
               Ad Soyad <span className="text-red-500">*</span>
             </label>
             <input
@@ -118,12 +118,12 @@ export default function AppointmentForm({
               placeholder="Örn: Ayşe Yılmaz"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition"
+              className="w-full px-3.5 py-2.5 text-sm bg-bronze-50/70 border border-bronze-200 rounded-xl text-espresso-900 placeholder:text-espresso-800/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bronze-500/20 focus:border-bronze-600 transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-espresso-800 mb-1">
               Telefon Numarası <span className="text-red-500">*</span>
             </label>
             <input
@@ -132,12 +132,12 @@ export default function AppointmentForm({
               placeholder="05XX XXX XX XX"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition"
+              className="w-full px-3.5 py-2.5 text-sm bg-bronze-50/70 border border-bronze-200 rounded-xl text-espresso-900 placeholder:text-espresso-800/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bronze-500/20 focus:border-bronze-600 transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-espresso-800 mb-1">
               E-Posta Adresi (İsteğe Bağlı)
             </label>
             <input
@@ -145,12 +145,12 @@ export default function AppointmentForm({
               placeholder="ornek@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition"
+              className="w-full px-3.5 py-2.5 text-sm bg-bronze-50/70 border border-bronze-200 rounded-xl text-espresso-900 placeholder:text-espresso-800/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bronze-500/20 focus:border-bronze-600 transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-espresso-800 mb-1">
               İletmek İstediğiniz Not
             </label>
             <textarea
@@ -158,14 +158,14 @@ export default function AppointmentForm({
               placeholder="Tedavi veya muayene ile ilgili sormak istedikleriniz..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition resize-none"
+              className="w-full px-3.5 py-2.5 text-sm bg-bronze-50/70 border border-bronze-200 rounded-xl text-espresso-900 placeholder:text-espresso-800/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bronze-500/20 focus:border-bronze-600 transition resize-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 bg-espresso-900 hover:bg-espresso-800 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -174,13 +174,13 @@ export default function AppointmentForm({
               </>
             ) : (
               <>
-                <Send className="w-4 h-4 text-amber-400" />
+                <Send className="w-4 h-4 text-bronze-400" />
                 <span>Bilgi ve Randevu Talebi İlet</span>
               </>
             )}
           </button>
 
-          <p className="text-[11px] text-slate-400 text-center leading-tight">
+          <p className="text-[11px] text-espresso-800/60 text-center leading-tight">
             Formu doldurarak KVKK aydınlatma metnini kabul etmiş olursunuz.
           </p>
         </form>

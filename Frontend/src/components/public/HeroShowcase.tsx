@@ -96,6 +96,15 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
             </m.a>
 
             <m.a
+              href="#iletisim"
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-white/5 hover:bg-white/15 text-white border border-bronze-400/70 hover:border-bronze-300 text-xs sm:text-sm font-semibold backdrop-blur-sm transition-colors"
+            >
+              İletişim
+            </m.a>
+
+            <m.a
               href={`tel:${phone.replace(/\s+/g, '')}`}
               onClick={handlePhoneClick}
               whileHover={{ y: -2 }}

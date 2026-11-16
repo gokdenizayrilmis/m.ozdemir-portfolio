@@ -59,6 +59,17 @@ export default function Header({ categories, treatments, settings }: HeaderProps
     trackConversionClick('WhatsAppClick', window.location.pathname);
   };
 
+  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    setMobileMenuOpen(false);
+    if (isHomePage) {
+      const target = document.getElementById('iletisim');
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
   const branches = MAIN_BRANCHES.map((branch) => {
     const matchedCat = categories.find((c) => c.slug === branch.slug);
     const branchTreatments = treatments
@@ -232,43 +243,24 @@ export default function Header({ categories, treatments, settings }: HeaderProps
             })}
 
             <Link
-              href="/iletisim"
+              href="/blog"
+              className={`transition whitespace-nowrap py-2 ${
+                isTransparent ? 'hover:text-peach-200' : 'hover:text-bronze-600'
+              }`}
+            >
+              Makaleler
+            </Link>
+
+            <Link
+              href="/#iletisim"
+              onClick={handleContactClick}
               className={`transition whitespace-nowrap py-2 ${
                 isTransparent ? 'hover:text-peach-200' : 'hover:text-bronze-600'
               }`}
             >
               İletişim
             </Link>
-
-            <Link
-              href="/kvkk"
-              className={`transition whitespace-nowrap py-2 ${
-                isTransparent ? 'hover:text-peach-200' : 'hover:text-bronze-600'
-              }`}
-            >
-              KVKK
-            </Link>
           </nav>
-
-          {/* Right: Clickable Phone Only */}
-          <div className="hidden lg:flex items-center shrink-0">
-            <a
-              href={`tel:${phone.replace(/\s+/g, '')}`}
-              onClick={handlePhoneClick}
-              className={`flex items-center gap-2 text-xs font-bold px-5 py-2.5 rounded-full transition shadow-sm ${
-                isTransparent
-                  ? 'bg-bronze-600 hover:bg-bronze-500 text-white shadow-black/25'
-                  : 'bg-bronze-50 hover:bg-peach-100 text-espresso-900 border border-bronze-200/80'
-              }`}
-            >
-              <Phone
-                className={`w-3.5 h-3.5 ${
-                  isTransparent ? 'text-peach-100' : 'text-bronze-700'
-                }`}
-              />
-              <span>{phone}</span>
-            </a>
-          </div>
 
           {/* Mobile Hamburger Button */}
           <div className="flex lg:hidden items-center gap-2">
@@ -371,18 +363,18 @@ export default function Header({ categories, treatments, settings }: HeaderProps
             </div>
 
             <Link
-              href="/iletisim"
+              href="/blog"
               onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-bold text-espresso-900 hover:text-bronze-700 py-1"
+            >
+              Makaleler
+            </Link>
+            <Link
+              href="/#iletisim"
+              onClick={handleContactClick}
               className="block text-sm font-bold text-espresso-900 hover:text-bronze-700 py-1"
             >
               İletişim
-            </Link>
-            <Link
-              href="/kvkk"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold text-espresso-900 hover:text-bronze-700 py-1"
-            >
-              KVKK
             </Link>
 
             <div className="pt-3 flex flex-col gap-2.5">

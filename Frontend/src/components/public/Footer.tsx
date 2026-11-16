@@ -74,7 +74,7 @@ export default function Footer({ categories, settings }: FooterProps) {
               </Link>
             </li>
             <li>
-              <Link href="/iletisim" className="hover:text-peach-200 transition">
+              <Link href="/#iletisim" className="hover:text-peach-200 transition">
                 Klinik Konumu & Ulaşım
               </Link>
             </li>

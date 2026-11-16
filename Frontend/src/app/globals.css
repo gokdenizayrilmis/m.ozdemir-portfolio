@@ -7,6 +7,10 @@
   --font-playfair: 'Playfair Display', Georgia, serif;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   color: #2e180c;
   background-color: #faf7f4;

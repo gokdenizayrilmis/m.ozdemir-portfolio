@@ -56,24 +56,24 @@ export default async function BlogDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="bg-[#FAF8F5] min-h-screen py-8 sm:py-12">
+    <div className="bg-clinic-canvas min-h-screen py-8 sm:py-12">
       <JsonLdSchema type="Blog" blog={blog} settings={settings} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-6 flex items-center gap-2 text-xs text-slate-500 font-medium"
+          className="mb-6 flex items-center gap-2 text-xs text-espresso-800/65 font-medium"
         >
-          <Link href="/" className="hover:text-amber-800 transition">
+          <Link href="/" className="hover:text-bronze-700 transition">
             Ana Sayfa
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <Link href="/blog" className="hover:text-amber-800 transition">
-            Blog
+          <ChevronRight className="w-3.5 h-3.5 text-bronze-400" />
+          <Link href="/blog" className="hover:text-bronze-700 transition">
+            Makaleler
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-semibold truncate">
+          <ChevronRight className="w-3.5 h-3.5 text-bronze-400" />
+          <span className="text-espresso-900 font-semibold truncate">
             {blog.title}
           </span>
         </nav>
@@ -82,7 +82,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
         <div className="mb-6">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-amber-800 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-espresso-800/75 hover:text-bronze-700 transition"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Tüm Makalelere Dön</span>
@@ -90,17 +90,17 @@ export default async function BlogDetailPage({ params }: PageProps) {
         </div>
 
         {/* Article Container */}
-        <article className="bg-white rounded-3xl p-6 sm:p-12 border border-slate-200/80 shadow-sm space-y-8">
+        <article className="bg-white rounded-3xl p-6 sm:p-12 border border-bronze-200/80 shadow-sm space-y-8">
           {/* Header Info */}
-          <div className="space-y-4 border-b border-slate-100 pb-8">
-            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-              <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                <User className="w-3.5 h-3.5 text-amber-700" />
+          <div className="space-y-4 border-b border-bronze-100 pb-8">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-espresso-800/65">
+              <span className="flex items-center gap-1.5 font-medium text-espresso-800">
+                <User className="w-3.5 h-3.5 text-bronze-700" />
                 {blog.author}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <Calendar className="w-3.5 h-3.5 text-bronze-400" />
                 {new Date(blog.publishedAt).toLocaleDateString('tr-TR', {
                   year: 'numeric',
                   month: 'long',
@@ -109,11 +109,11 @@ export default async function BlogDetailPage({ params }: PageProps) {
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-slate-900 leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-espresso-900 leading-tight">
               {blog.title}
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed italic bg-slate-50 p-4 rounded-xl border-l-4 border-amber-600">
+            <p className="text-sm sm:text-base text-espresso-800/80 leading-relaxed italic bg-peach-50/70 p-4 rounded-xl border-l-4 border-bronze-600">
               {blog.summary}
             </p>
           </div>
@@ -126,14 +126,14 @@ export default async function BlogDetailPage({ params }: PageProps) {
 
           {/* Tags */}
           {blog.tags && blog.tags.length > 0 && (
-            <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500">
+            <div className="pt-6 border-t border-bronze-100 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-espresso-800/65">
                 Etiketler:
               </span>
               {blog.tags.map((t, idx) => (
                 <span
                   key={idx}
-                  className="px-2.5 py-1 text-xs rounded-full bg-slate-100 text-slate-700 font-medium"
+                  className="px-2.5 py-1 text-xs rounded-full bg-peach-50 border border-peach-200/70 text-bronze-800 font-medium"
                 >
                   #{t}
                 </span>

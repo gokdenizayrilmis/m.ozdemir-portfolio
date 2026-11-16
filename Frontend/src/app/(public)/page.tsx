@@ -2,12 +2,12 @@ import Link from 'next/link';
 import {
   categoryService,
   treatmentService,
-  blogService,
   settingsService,
 } from '@/services';
 import TreatmentCard from '@/components/public/TreatmentCard';
 import HeroShowcase from '@/components/public/HeroShowcase';
 import DoctorAboutSection from '@/components/public/DoctorAboutSection';
+import ContactSection from '@/components/public/ContactSection';
 import {
   FadeIn,
   StaggerContainer,
@@ -17,15 +17,13 @@ import {
 import { Sparkles, ArrowRight } from 'lucide-react';
 
 export default async function HomePage() {
-  const [categories, treatments, blogs, settings] = await Promise.all([
+  const [categories, treatments, settings] = await Promise.all([
     categoryService.getAll(),
     treatmentService.getAll(),
-    blogService.getAll(),
     settingsService.getSettings(),
   ]);
 
   const featuredTreatments = treatments.slice(0, 6);
-  const latestBlogs = blogs.slice(0, 3);
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-16">
@@ -115,66 +113,8 @@ export default async function HomePage() {
       {/* 4. Hakkımda Alanı — Akademik Kariyer & Uzmanlık + Resmi Belgeler */}
       <DoctorAboutSection settings={settings} />
 
-      {/* 5. Dermatoloji Rehberi — Güncel Tıbbi Makaleler & Yazılar */}
-      {latestBlogs.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6">
-          <FadeIn className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-10 gap-4">
-            <div>
-              <span className="text-xs uppercase tracking-widest text-bronze-700 font-bold">
-                Dermatoloji Rehberi
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-espresso-900 mt-1">
-                Güncel Tıbbi Makaleler &amp; Yazılar
-              </h2>
-            </div>
-            <Link
-              href="/blog"
-              className="text-xs font-semibold text-bronze-700 hover:text-espresso-900 flex items-center gap-1.5"
-            >
-              <span>Tüm Makaleleri Oku</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </FadeIn>
-
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {latestBlogs.map((b) => (
-              <StaggerItem key={b.id} className="h-full">
-                <HoverLift className="h-full">
-                  <article className="h-full bg-white rounded-2xl p-6 border border-bronze-200/80 hover:border-bronze-500/70 hover:shadow-xl transition flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        {b.tags?.[0] && (
-                          <span className="text-[11px] font-semibold text-bronze-800 bg-peach-50 border border-peach-200/70 px-2.5 py-0.5 rounded-full">
-                            {b.tags[0]}
-                          </span>
-                        )}
-                        <span className="text-[11px] text-bronze-500">
-                          Prof. Dr. Mustafa Özdemir
-                        </span>
-                      </div>
-                      <h3 className="font-serif font-bold text-base text-espresso-900 hover:text-bronze-700 transition line-clamp-2 mb-2">
-                        <Link href={`/blog/${b.slug}`}>{b.title}</Link>
-                      </h3>
-                      <p className="text-xs text-espresso-800/75 line-clamp-3 leading-relaxed">
-                        {b.summary}
-                      </p>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-bronze-100">
-                      <Link
-                        href={`/blog/${b.slug}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-bronze-700 hover:text-espresso-900"
-                      >
-                        <span>Yazının Devamı</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </article>
-                </HoverLift>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </section>
-      )}
+      {/* 5. İletişim & Randevu — Adres, Form ve Klinik Haritası */}
+      <ContactSection settings={settings} />
     </div>
   );
 }
