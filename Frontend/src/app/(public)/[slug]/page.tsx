@@ -13,7 +13,7 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react';
-import { createWhatsAppUrl } from '@/utils/cn';
+import { createWhatsAppUrl, resolveMediaUrl } from '@/utils/cn';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -110,25 +110,40 @@ export default async function TreatmentDetailPage({ params }: PageProps) {
         </nav>
 
         {/* Hero Header for Landing Page */}
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-sm mb-10 space-y-4">
-          <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
-            <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60">
-              {treatment.categorySlug.replace('-', ' ').toUpperCase()}
-            </span>
-            <span className="text-slate-400">•</span>
-            <span className="text-slate-500 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" />
-              Uzman Dermatolog Kontrolü
-            </span>
+        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-sm mb-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
+              <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60">
+                {treatment.categorySlug.replace('-', ' ').toUpperCase()}
+              </span>
+              <span className="text-slate-400">•</span>
+              <span className="text-slate-500 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                Uzman Dermatolog Kontrolü
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-slate-900 tracking-tight leading-tight">
+              {treatment.title}
+            </h1>
+
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-4xl">
+              {treatment.summary}
+            </p>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-slate-900 tracking-tight leading-tight">
-            {treatment.title}
-          </h1>
-
-          <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-4xl">
-            {treatment.summary}
-          </p>
+          {treatment.coverImageUrl && (
+            <div className="lg:col-span-4">
+              <div className="relative h-56 sm:h-64 w-full rounded-2xl overflow-hidden border border-amber-200/70 shadow-md bg-slate-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={resolveMediaUrl(treatment.coverImageUrl)}
+                  alt={treatment.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 2-Column Layout */}

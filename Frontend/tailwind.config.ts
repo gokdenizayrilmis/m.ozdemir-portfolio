@@ -31,9 +31,21 @@ const config: Config = {
           800: '#6c4632',
           900: '#583b2b',
         },
+        espresso: {
+          700: '#542C16',
+          800: '#422211',
+          900: '#2E180C',
+          950: '#1F1008',
+        },
+        peach: {
+          50: '#FDF6F2',
+          100: '#FBECE4',
+          200: '#F6D2BE',
+          300: '#EDB89B',
+        },
         clinic: {
-          canvas: '#FAF8F5',
-          gold: '#C5A059',
+          canvas: '#FAF7F4',
+          gold: '#9E6D47',
           emerald: '#059669',
         },
       },

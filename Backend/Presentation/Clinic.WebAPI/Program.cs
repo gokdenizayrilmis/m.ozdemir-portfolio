@@ -33,6 +33,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Ensure wwwroot/uploads directory exists on startup
+var webRootPath = app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+var uploadsPath = Path.Combine(webRootPath, "uploads");
+Directory.CreateDirectory(uploadsPath);
+
 // 4. Execute Database Seeder at Startup
 using (var scope = app.Services.CreateScope())
 {
@@ -48,7 +53,6 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCors("NextJsCorsPolicy");
 

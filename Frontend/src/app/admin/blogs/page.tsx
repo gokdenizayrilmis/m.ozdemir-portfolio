@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { blogService } from '@/services';
 import { BlogPost, SeoMetadata } from '@/types';
 import SeoMetaBox from '@/components/admin/SeoMetaBox';
+import ImageUpload from '@/components/admin/ImageUpload';
 import { Plus, Edit2, Trash2, Eye, Loader2, X, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
@@ -34,7 +35,7 @@ export default function AdminBlogsPage() {
       summary: '',
       htmlContent: '<p>Makale içeriği buraya gelecek...</p>',
       author: 'Prof. Dr. Mustafa Özdemir',
-      coverImageUrl: '/images/blog/default.webp',
+      coverImageUrl: '/uploads/treatments/lazerle-leke-tedavisi.jpg',
       isPublished: true,
       tags: ['Dermatoloji'],
       seo: {
@@ -258,6 +259,16 @@ export default function AdminBlogsPage() {
                   />
                 </div>
               </div>
+
+              <ImageUpload
+                label="Makale Kapak Görseli (CoverImageUrl)"
+                description="Blog listesinde ve makale detay sayfasında gösterilecek kapak görseli"
+                folder="blogs"
+                value={editingBlog.coverImageUrl || ''}
+                onChange={(url) =>
+                  setEditingBlog({ ...editingBlog, coverImageUrl: url })
+                }
+              />
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">

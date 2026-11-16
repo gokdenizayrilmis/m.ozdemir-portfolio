@@ -25,8 +25,8 @@ public class MediaController : ControllerBase
     [HttpPost("upload")]
     [RequestSizeLimit(10 * 1024 * 1024)] // 10 MB
     public async Task<IActionResult> UploadImage(
-        IFormFile file,
-        [FromQuery] string folder = "uploads",
+        [FromForm] IFormFile file,
+        [FromQuery] string folder = "general",
         CancellationToken cancellationToken = default)
     {
         if (file is null || file.Length == 0)
@@ -37,27 +37,36 @@ public class MediaController : ControllerBase
         var extension = Path.GetExtension(file.FileName);
         if (!AllowedExtensions.Contains(extension))
         {
-            return BadRequest(Result<string>.Failure("Yalnızca .webp, .jpg, .png, .avif ve .svg formatları desteklenmektedir."));
+            return BadRequest(Result<string>.Failure("Yalnızca .webp, .jpg, .jpeg, .png, .avif ve .svg formatları desteklenmektedir."));
         }
 
         await using var stream = file.OpenReadStream();
-        var imageUrl = await _imageStorageService.UploadImageAsync(
+        var relativePath = await _imageStorageService.UploadImageAsync(
             stream,
             file.FileName,
             file.ContentType,
             folder,
             cancellationToken);
 
-        return Ok(Result<string>.Success(imageUrl, "Görsel başarıyla yüklendi."));
+        var fullUrl = $"{Request.Scheme}://{Request.Host}{relativePath}";
+        return Ok(Result<string>.Success(fullUrl, "Görsel başarıyla yüklendi."));
     }
 
     [HttpDelete]
-    public async Task<IActionResult> DeleteImage([FromQuery] string imageUrl, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> DeleteImage(
+        [FromQuery] string? fileUrl = null,
+        [FromQuery] string? imageUrl = null,
+        CancellationToken cancellationToken = default)
     {
-        var deleted = await _imageStorageService.DeleteImageAsync(imageUrl, cancellationToken);
+        var targetUrl = !string.IsNullOrWhiteSpace(fileUrl) ? fileUrl : imageUrl;
+        if (string.IsNullOrWhiteSpace(targetUrl))
+        {
+            return BadRequest(Result.Failure("Silinecek görsel URL'si belirtilmedi."));
+        }
+
+        var deleted = await _imageStorageService.DeleteImageAsync(targetUrl, cancellationToken);
         return deleted
             ? Ok(Result.Success("Görsel başarıyla silindi."))
             : NotFound(Result.Failure("Silinecek görsel bulunamadı."));
     }
 }
-

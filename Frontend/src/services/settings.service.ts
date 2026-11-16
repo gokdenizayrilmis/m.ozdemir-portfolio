@@ -9,6 +9,12 @@ export const FALLBACK_SETTINGS: SiteSettings = {
   doctorTitle: 'Dermatoloji (Deri ve Zührevi Hastalıkları) Uzmanı',
   doctorBio:
     '<p>Prof. Dr. Mustafa Özdemir, 1995 Cerrahpaşa Tıp mezunu olup 2015 yılında Profesör unvanını almıştır. İstanbul Ataköy Towers kliniğinde hizmet vermektedir.</p>',
+  logoUrl: '/uploads/corporate/logo.png',
+  doctorPortraitUrl: '/uploads/corporate/doctor-portrait.jpg',
+  heroShowroomImageUrl: '/uploads/corporate/hero-showroom.jpg',
+  heroVideoUrl: '',
+  healthTurkiyeCertificateUrl: '/uploads/corporate/health-turkiye-certificate.jpeg',
+  ministryCertificateUrl: '/uploads/corporate/ministry-certificate.jpeg',
   address:
     'Ataköy 7-8-9-10. Kısım Mah. Çobançeşme E-5 Yanyol Cad. Ataköy Towers B-Blok No:146, 34158 Bakırköy/İstanbul',
   phoneNumbers: ['+90 552 265 64 36', '0 553 794 26 00'],

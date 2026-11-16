@@ -8,8 +8,8 @@
 }
 
 body {
-  color: #1e293b;
-  background-color: #faf8f5;
+  color: #2e180c;
+  background-color: #faf7f4;
   font-family: var(--font-inter);
   -webkit-font-smoothing: antialiased;
 }
@@ -18,7 +18,7 @@ body {
 .prose-medical h2 {
   font-family: var(--font-playfair);
   font-weight: 700;
-  color: #0f172a;
+  color: #2e180c;
   margin-top: 2rem;
   margin-bottom: 1rem;
   font-size: 1.5rem;
@@ -27,7 +27,7 @@ body {
 .prose-medical h3 {
   font-family: var(--font-playfair);
   font-weight: 600;
-  color: #1e293b;
+  color: #422211;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
   font-size: 1.25rem;

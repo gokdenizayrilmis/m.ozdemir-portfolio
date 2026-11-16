@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import AppointmentForm from '@/components/public/AppointmentForm';
+import { settingsService } from '@/services';
+import { resolveMediaUrl } from '@/utils/cn';
 import { Award, GraduationCap, Building2, BookOpen } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -12,22 +14,42 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
+  const settings = await settingsService.getSettings();
+  const portraitUrl = resolveMediaUrl(
+    settings?.doctorPortraitUrl,
+    '/uploads/corporate/doctor-portrait.jpg'
+  );
+
   return (
     <div className="bg-[#FAF8F5] min-h-screen py-10 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
         {/* Hero Header */}
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
-            <GraduationCap className="w-4 h-4 text-amber-700" />
-            <span>Akademik ve Klinik Özgeçmiş</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+              <GraduationCap className="w-4 h-4 text-amber-700" />
+              <span>Akademik ve Klinik Özgeçmiş</span>
+            </div>
+            <h1 className="text-3xl sm:text-5xl font-serif font-bold text-slate-900 tracking-tight">
+              {settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+            </h1>
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+              {settings?.doctorTitle ||
+                'Dermatoloji (Deri ve Zührevi Hastalıklar) Uzmanı • Akademisyen • Klinik Araştırmacı'}
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-serif font-bold text-slate-900 tracking-tight">
-            Prof. Dr. Mustafa Özdemir
-          </h1>
-          <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Dermatoloji (Deri ve Zührevi Hastalıklar) Uzmanı • Akademisyen •
-            Klinik Araştırmacı
-          </p>
+          {portraitUrl && (
+            <div className="lg:col-span-4 flex justify-start lg:justify-end">
+              <div className="w-48 h-60 rounded-3xl overflow-hidden border-2 border-amber-500/40 shadow-xl bg-slate-900">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={portraitUrl}
+                  alt={settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 2-Column Academic Highlights */}

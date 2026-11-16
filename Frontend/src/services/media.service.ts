@@ -5,7 +5,7 @@ import { httpClient } from './http-client';
 export const mediaService = {
   async uploadImage(
     file: File,
-    folder: string = 'uploads'
+    folder: string = 'general'
   ): Promise<Result<string>> {
     const formData = new FormData();
     formData.append('file', file);
@@ -16,8 +16,8 @@ export const mediaService = {
     );
   },
 
-  async deleteImage(imageUrl: string): Promise<Result> {
-    return httpClient.delete(API_ENDPOINTS.MEDIA.DELETE(imageUrl), {
+  async deleteImage(fileUrl: string): Promise<Result> {
+    return httpClient.delete(API_ENDPOINTS.MEDIA.DELETE(fileUrl), {
       timeoutMs: 5000,
     });
   },

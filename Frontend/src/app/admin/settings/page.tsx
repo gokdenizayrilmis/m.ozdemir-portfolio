@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { settingsService } from '@/services';
 import { SiteSettings } from '@/types';
-import { Save, Loader2, CheckCircle2 } from 'lucide-react';
+import ImageUpload from '@/components/admin/ImageUpload';
+import { Save, Loader2, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -74,6 +75,91 @@ export default function AdminSettingsPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6 text-xs">
+        {/* Corporate Images & Certificates Card */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-5">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+              <ImageIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-serif font-bold text-slate-900 text-base">
+                Kurumsal Görseller & Belgeler
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Üst menü logosu, Hero vitrin portresi ve resmi yetki belgelerini bilgisayarınızdan yükleyerek anında güncelleyin
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <ImageUpload
+              label="Üst Menü & Kurumsal Logo (LogoUrl)"
+              description="Header sol üst köşede gösterilen resmi klinik logosu"
+              folder="corporate"
+              value={settings.logoUrl || ''}
+              onChange={(url) => setSettings({ ...settings, logoUrl: url })}
+            />
+
+            <ImageUpload
+              label="Doktor Portre Görseli (DoctorPortraitUrl)"
+              description="Ana sayfa Hero sağ vitrininde ve Hakkımızda sayfasında gösterilen portre"
+              folder="corporate"
+              value={settings.doctorPortraitUrl || ''}
+              onChange={(url) =>
+                setSettings({ ...settings, doctorPortraitUrl: url })
+              }
+            />
+
+            <ImageUpload
+              label="Hero Sağ Vitrin Görseli (HeroShowroomImageUrl)"
+              description="Ana sayfa Hero alanında alternatif veya ikincil vitrin görseli"
+              folder="corporate"
+              value={settings.heroShowroomImageUrl || ''}
+              onChange={(url) =>
+                setSettings({ ...settings, heroShowroomImageUrl: url })
+              }
+            />
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Opsiyonel Tanıtım Videosu URL (HeroVideoUrl)
+              </label>
+              <p className="text-[11px] text-slate-500 mb-2">
+                Dilerseniz Hero alanında tanıtım videosu bağlantısı tanımlayabilirsiniz
+              </p>
+              <input
+                type="text"
+                value={settings.heroVideoUrl || ''}
+                onChange={(e) =>
+                  setSettings({ ...settings, heroVideoUrl: e.target.value })
+                }
+                placeholder="https://..."
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none font-mono"
+              />
+            </div>
+
+            <ImageUpload
+              label="Health Türkiye Sertifikası (HealthTurkiyeCertificateUrl)"
+              description="Uluslararası Sağlık Turizmi / Health Türkiye resmi sertifika görseli"
+              folder="corporate"
+              value={settings.healthTurkiyeCertificateUrl || ''}
+              onChange={(url) =>
+                setSettings({ ...settings, healthTurkiyeCertificateUrl: url })
+              }
+            />
+
+            <ImageUpload
+              label="T.C. Sağlık Bakanlığı Yetki Belgesi (MinistryCertificateUrl)"
+              description="Sağlık Bakanlığı resmi ruhsat ve yetki belgesi görseli"
+              folder="corporate"
+              value={settings.ministryCertificateUrl || ''}
+              onChange={(url) =>
+                setSettings({ ...settings, ministryCertificateUrl: url })
+              }
+            />
+          </div>
+        </div>
+
         {/* Contact Info Card */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-4">
           <h3 className="font-serif font-bold text-slate-900 text-base border-b border-slate-100 pb-3">

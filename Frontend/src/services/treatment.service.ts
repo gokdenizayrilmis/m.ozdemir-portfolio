@@ -13,7 +13,7 @@ export const FALLBACK_TREATMENTS: Treatment[] = [
       'Güneş lekeleri, melazma ve yaşlılık lekelerinde hedefli lazer protokolleri ile güvenli leke tedavisi.',
     htmlContent:
       '<h2>Lazerle Leke Tedavisi</h2><p>Lazerle leke tedavisi cildin melanin pigmentini hedef alarak çevre dokuya zarar vermeden lekelerin açılmasını sağlar.</p>',
-    coverImageUrl: '/images/treatments/lazerle-leke-tedavisi.webp',
+    coverImageUrl: '/uploads/treatments/lazerle-leke-tedavisi.jpg',
     displayOrder: 1,
     isPublished: true,
     faqs: [
@@ -41,7 +41,7 @@ export const FALLBACK_TREATMENTS: Treatment[] = [
       'Ergenlik ve yetişkin dönemi akne problemlerinde kalıcı iz oluşumunu engelleyen dermatolojik tedaviler.',
     htmlContent:
       '<h2>Akne ve Sivilce Tedavisi</h2><p>Akne tedavisinde topikal ve medikal ajanlarla sebum dengesi sağlanır.</p>',
-    coverImageUrl: '/images/treatments/akne-sivilce-tedavisi.webp',
+    coverImageUrl: '/uploads/treatments/akne-sivilce-tedavisi.png',
     displayOrder: 2,
     isPublished: true,
     faqs: [
@@ -69,7 +69,7 @@ export const FALLBACK_TREATMENTS: Treatment[] = [
       'HPV kaynaklı genital siğil (kondilom) lezyonlarında hasta mahremiyetine tam saygılı kriyoterapi ve lazer tedavisi.',
     htmlContent:
       '<h2>HPV ve Genital Siğil Tedavisi</h2><p>Hasta mahremiyetine tam saygı gösterilerek kriyoterapi ve koterizasyon yöntemleri uygulanır.</p>',
-    coverImageUrl: '/images/treatments/hpv-genital-sigil-tedavisi.webp',
+    coverImageUrl: '/uploads/treatments/hpv-genital-sigil-tedavisi.png',
     displayOrder: 3,
     isPublished: true,
     faqs: [

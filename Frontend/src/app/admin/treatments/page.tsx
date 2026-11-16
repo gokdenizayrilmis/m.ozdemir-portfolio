@@ -5,6 +5,7 @@ import { treatmentService, categoryService } from '@/services';
 import { Treatment, Category, SeoMetadata, FaqItem } from '@/types';
 import SeoMetaBox from '@/components/admin/SeoMetaBox';
 import FaqListEditor from '@/components/admin/FaqListEditor';
+import ImageUpload from '@/components/admin/ImageUpload';
 import {
   Plus,
   Search,
@@ -57,7 +58,7 @@ export default function AdminTreatmentsPage() {
       categoryId: categories[0]?.id || '',
       summary: '',
       htmlContent: '<p>Tedavi detay açıklaması buraya gelecek...</p>',
-      coverImageUrl: '/images/treatments/default.webp',
+      coverImageUrl: '/uploads/treatments/lazerle-leke-tedavisi.jpg',
       displayOrder: 1,
       isPublished: true,
       faqs: [],
@@ -421,6 +422,19 @@ export default function AdminTreatmentsPage() {
                   </label>
                 </div>
               </div>
+
+              <ImageUpload
+                label="Tedavi Kapak Görseli (CoverImageUrl)"
+                description="Tedavi kartlarında ve detay sayfası üst vitrininde gösterilecek kapak görseli"
+                folder="treatments"
+                value={editingTreatment.coverImageUrl || ''}
+                onChange={(url) =>
+                  setEditingTreatment({
+                    ...editingTreatment,
+                    coverImageUrl: url,
+                  })
+                }
+              />
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">

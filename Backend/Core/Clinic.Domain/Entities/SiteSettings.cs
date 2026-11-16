@@ -19,5 +19,12 @@ public class SiteSettings : BaseEntity
     public string? GoogleTagManagerId { get; set; }
     public string? GoogleAnalyticsId { get; set; }
     public string LegalNotice { get; set; } = "T.C. Sağlık Bakanlığı yönergeleri gereği sitemizde işlem fiyatları belirtilmemekte olup, tüm içerikler yalnızca bilgilendirme amaçlıdır. Tanı ve tedavi için mutlaka hekiminize başvurunuz.";
-}
 
+    // Dynamic Corporate & Hero Visual Fields
+    public string LogoUrl { get; set; } = "/uploads/corporate/logo.png";
+    public string DoctorPortraitUrl { get; set; } = "/uploads/corporate/doctor-portrait.jpg";
+    public string HeroShowroomImageUrl { get; set; } = "/uploads/corporate/hero-showroom.jpg";
+    public string? HeroVideoUrl { get; set; }
+    public string HealthTurkiyeCertificateUrl { get; set; } = "/uploads/corporate/health-turkiye-certificate.jpeg";
+    public string MinistryCertificateUrl { get; set; } = "/uploads/corporate/ministry-certificate.jpeg";
+}

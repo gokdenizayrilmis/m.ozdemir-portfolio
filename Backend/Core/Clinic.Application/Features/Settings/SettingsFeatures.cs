@@ -40,7 +40,13 @@ public record UpdateSiteSettingsCommand(
     SocialMediaLinks? SocialMedia,
     string? GoogleTagManagerId,
     string? GoogleAnalyticsId,
-    string? LegalNotice
+    string? LegalNotice,
+    string? LogoUrl,
+    string? DoctorPortraitUrl,
+    string? HeroShowroomImageUrl,
+    string? HeroVideoUrl,
+    string? HealthTurkiyeCertificateUrl,
+    string? MinistryCertificateUrl
 ) : IRequest<Result<SiteSettings>>;
 
 public class UpdateSiteSettingsCommandHandler : IRequestHandler<UpdateSiteSettingsCommand, Result<SiteSettings>>
@@ -77,12 +83,24 @@ public class UpdateSiteSettingsCommandHandler : IRequestHandler<UpdateSiteSettin
         {
             current.LegalNotice = request.LegalNotice.Trim();
         }
+
+        if (!string.IsNullOrWhiteSpace(request.LogoUrl))
+            current.LogoUrl = request.LogoUrl.Trim();
+        if (!string.IsNullOrWhiteSpace(request.DoctorPortraitUrl))
+            current.DoctorPortraitUrl = request.DoctorPortraitUrl.Trim();
+        if (!string.IsNullOrWhiteSpace(request.HeroShowroomImageUrl))
+            current.HeroShowroomImageUrl = request.HeroShowroomImageUrl.Trim();
+        current.HeroVideoUrl = request.HeroVideoUrl?.Trim();
+        if (!string.IsNullOrWhiteSpace(request.HealthTurkiyeCertificateUrl))
+            current.HealthTurkiyeCertificateUrl = request.HealthTurkiyeCertificateUrl.Trim();
+        if (!string.IsNullOrWhiteSpace(request.MinistryCertificateUrl))
+            current.MinistryCertificateUrl = request.MinistryCertificateUrl.Trim();
+
         current.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateSettingsAsync(current, cancellationToken);
-        await _revalidationService.RevalidatePathsAsync(new[] { "/", "/iletisim", "/hakkimda" }, cancellationToken);
+        await _revalidationService.RevalidatePathsAsync(new[] { "/", "/iletisim", "/hakkimizda" }, cancellationToken);
 
         return Result<SiteSettings>.Success(current, "Klinik ayarları başarıyla güncellendi.");
     }
 }
-

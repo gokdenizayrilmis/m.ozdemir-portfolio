@@ -3,15 +3,16 @@ import Footer from '@/components/public/Footer';
 import StickyMobileBar from '@/components/public/StickyMobileBar';
 import JsonLdSchema from '@/components/public/JsonLdSchema';
 import UtmInitializer from '@/components/public/UtmInitializer';
-import { categoryService, settingsService } from '@/services';
+import { categoryService, settingsService, treatmentService } from '@/services';
 
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [categories, settings] = await Promise.all([
+  const [categories, treatments, settings] = await Promise.all([
     categoryService.getAll(),
+    treatmentService.getAll(),
     settingsService.getSettings(),
   ]);
 
@@ -22,7 +23,11 @@ export default async function PublicLayout({
     <>
       <UtmInitializer />
       <JsonLdSchema type="Clinic" settings={settings} />
-      <Header categories={categories} settings={settings} />
+      <Header
+        categories={categories}
+        treatments={treatments}
+        settings={settings}
+      />
       <main className="flex-grow">{children}</main>
       <Footer categories={categories} settings={settings} />
       <StickyMobileBar phone={phone} whatsappNumber={whatsappNumber} />

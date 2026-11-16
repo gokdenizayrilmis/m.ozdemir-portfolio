@@ -11,6 +11,30 @@ public class DatabaseSeeder
     private readonly MongoDbContext _context;
     private readonly ILogger<DatabaseSeeder> _logger;
 
+    private static readonly Dictionary<string, string> TreatmentImageMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["lazerle-leke-tedavisi"] = "/uploads/treatments/lazerle-leke-tedavisi.jpg",
+        ["akne-sivilce-tedavisi"] = "/uploads/treatments/akne-sivilce-tedavisi.png",
+        ["hpv-genital-sigil-tedavisi"] = "/uploads/treatments/hpv-genital-sigil-tedavisi.png",
+        ["ben-taramasi-dermatoskopi"] = "/uploads/corporate/doctor-portrait.jpg",
+        ["sedef-hastaligi-psoriasis"] = "/uploads/treatments/sedef-hastaligi-psoriasis.png",
+        ["gul-hastaligi-rozasea"] = "/uploads/treatments/gul-hastaligi-rozasea.png",
+        ["egzama-tedavisi"] = "/uploads/treatments/egzama-tedavisi.png",
+        ["zona-gece-yanigi-tedavisi"] = "/uploads/treatments/zona-gece-yanigi-tedavisi.png",
+        ["liken-planus-tedavisi"] = "/uploads/treatments/liken-planus-tedavisi.png",
+        ["seboreik-dermatit-tedavisi"] = "/uploads/treatments/seboreik-dermatit-tedavisi.png",
+        ["mantar-hastaliklari-tedavisi"] = "/uploads/treatments/mantar-hastaliklari-tedavisi.png",
+        ["tirnak-hastaliklari-tedavisi"] = "/uploads/treatments/tirnak-hastaliklari-tedavisi.png",
+        ["ucuk-herpes-tedavisi"] = "/uploads/treatments/ucuk-herpes-tedavisi.png",
+        ["cocuk-deri-hastaliklari"] = "/uploads/treatments/cocuk-deri-hastaliklari.png",
+        ["ameliyatsiz-ip-askisi"] = "/uploads/corporate/hero-showroom.jpg",
+        ["kimyasal-peeling"] = "/uploads/treatments/lazerle-leke-tedavisi.jpg",
+        ["hiperhidroz-asiri-terleme-tedavisi"] = "/uploads/corporate/doctor-portrait.jpg",
+        ["sac-mezoterapisi-ve-sac-dokulmesi"] = "/uploads/treatments/seboreik-dermatit-tedavisi.png",
+        ["dovme-silme"] = "/uploads/treatments/dovme-silme.jpg",
+        ["kilcal-damar-ve-varis-lazer-tedavisi"] = "/uploads/treatments/gul-hastaligi-rozasea.png"
+    };
+
     public DatabaseSeeder(MongoDbContext context, ILogger<DatabaseSeeder> logger)
     {
         _context = context;
@@ -39,7 +63,11 @@ public class DatabaseSeeder
 
     private async Task SeedAdminUserAsync(CancellationToken cancellationToken)
     {
-        if (await _context.AdminUsers.Find(_ => true).AnyAsync(cancellationToken))
+        var existingAdmin = await _context.AdminUsers
+            .Find(x => x.Email == "mustafaozdemir@yahoo.com")
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (existingAdmin is not null)
             return;
 
         var admin = new AdminUser
@@ -55,8 +83,47 @@ public class DatabaseSeeder
 
     private async Task SeedSiteSettingsAsync(CancellationToken cancellationToken)
     {
-        if (await _context.SiteSettings.Find(_ => true).AnyAsync(cancellationToken))
+        var existing = await _context.SiteSettings.Find(_ => true).FirstOrDefaultAsync(cancellationToken);
+        if (existing is not null)
+        {
+            var needsUpdate = false;
+
+            if (string.IsNullOrWhiteSpace(existing.LogoUrl) || existing.LogoUrl.StartsWith("/images/"))
+            {
+                existing.LogoUrl = "/uploads/corporate/logo.png";
+                needsUpdate = true;
+            }
+            if (string.IsNullOrWhiteSpace(existing.DoctorPortraitUrl) || existing.DoctorPortraitUrl.StartsWith("/images/"))
+            {
+                existing.DoctorPortraitUrl = "/uploads/corporate/doctor-portrait.jpg";
+                needsUpdate = true;
+            }
+            if (string.IsNullOrWhiteSpace(existing.HeroShowroomImageUrl) || existing.HeroShowroomImageUrl.StartsWith("/images/"))
+            {
+                existing.HeroShowroomImageUrl = "/uploads/corporate/hero-showroom.jpg";
+                needsUpdate = true;
+            }
+            if (string.IsNullOrWhiteSpace(existing.HealthTurkiyeCertificateUrl) || existing.HealthTurkiyeCertificateUrl.StartsWith("/images/"))
+            {
+                existing.HealthTurkiyeCertificateUrl = "/uploads/corporate/health-turkiye-certificate.jpeg";
+                needsUpdate = true;
+            }
+            if (string.IsNullOrWhiteSpace(existing.MinistryCertificateUrl) || existing.MinistryCertificateUrl.StartsWith("/images/"))
+            {
+                existing.MinistryCertificateUrl = "/uploads/corporate/ministry-certificate.jpeg";
+                needsUpdate = true;
+            }
+
+            if (needsUpdate)
+            {
+                existing.UpdatedAt = DateTime.UtcNow;
+                await _context.SiteSettings.ReplaceOneAsync(
+                    x => x.Id == existing.Id,
+                    existing,
+                    cancellationToken: cancellationToken);
+            }
             return;
+        }
 
         var settings = new SiteSettings
         {
@@ -75,7 +142,12 @@ public class DatabaseSeeder
                 Instagram = "https://www.instagram.com/prof.dr.mustafaozdemir",
                 Facebook = "https://www.facebook.com/drmustafaozdemir"
             },
-            LegalNotice = "T.C. Sağlık Bakanlığı yönergeleri gereği sitemizde işlem fiyatları belirtilmemekte olup, tüm içerikler yalnızca bilgilendirme amaçlıdır. Tanı ve tedavi için mutlaka uzman hekiminize başvurunuz."
+            LegalNotice = "T.C. Sağlık Bakanlığı yönergeleri gereği sitemizde işlem fiyatları belirtilmemekte olup, tüm içerikler yalnızca bilgilendirme amaçlıdır. Tanı ve tedavi için mutlaka uzman hekiminize başvurunuz.",
+            LogoUrl = "/uploads/corporate/logo.png",
+            DoctorPortraitUrl = "/uploads/corporate/doctor-portrait.jpg",
+            HeroShowroomImageUrl = "/uploads/corporate/hero-showroom.jpg",
+            HealthTurkiyeCertificateUrl = "/uploads/corporate/health-turkiye-certificate.jpeg",
+            MinistryCertificateUrl = "/uploads/corporate/ministry-certificate.jpeg"
         };
 
         await _context.SiteSettings.InsertOneAsync(settings, cancellationToken: cancellationToken);
@@ -132,7 +204,7 @@ public class DatabaseSeeder
             },
             new()
             {
-                Title = "Lazer Tedavileri",
+                Title = "Lazer",
                 Slug = "lazer",
                 Description = "Lazerle leke tedavisi, dövme silme, kılcal damar ve varis tedavisi, cilt yenileme, sivilce izleri ve çatlak tedavilerinde ileri teknoloji lazer sistemleri.",
                 DisplayOrder = 4,
@@ -151,15 +223,54 @@ public class DatabaseSeeder
 
     private async Task SeedTreatmentsAsync(Dictionary<string, Category> categories, CancellationToken cancellationToken)
     {
-        if (await _context.Treatments.Find(_ => true).AnyAsync(cancellationToken))
-            return;
-
         var dermatolojiId = categories["dermatoloji"].Id;
         var kozmetikId = categories["kozmetik-dermatoloji"].Id;
         var sacId = categories["sac-hastaliklari"].Id;
         var lazerId = categories["lazer"].Id;
 
-        var treatments = new List<Treatment>
+        var seedList = BuildInitialTreatments(dermatolojiId, kozmetikId, sacId, lazerId);
+
+        var existingTreatments = await _context.Treatments.Find(_ => true).ToListAsync(cancellationToken);
+        if (existingTreatments.Count == 0)
+        {
+            await _context.Treatments.InsertManyAsync(seedList, cancellationToken: cancellationToken);
+            return;
+        }
+
+        // Update existing records that have empty or legacy (/images/...) CoverImageUrl
+        foreach (var existing in existingTreatments)
+        {
+            if (TreatmentImageMap.TryGetValue(existing.Slug, out var mappedImageUrl))
+            {
+                if (string.IsNullOrWhiteSpace(existing.CoverImageUrl) ||
+                    existing.CoverImageUrl.StartsWith("/images/", StringComparison.OrdinalIgnoreCase))
+                {
+                    existing.CoverImageUrl = mappedImageUrl;
+                    existing.UpdatedAt = DateTime.UtcNow;
+                    await _context.Treatments.ReplaceOneAsync(
+                        x => x.Id == existing.Id,
+                        existing,
+                        cancellationToken: cancellationToken);
+                }
+            }
+        }
+
+        // Also insert any newly added seed treatments whose slug does not exist yet
+        var existingSlugs = existingTreatments.Select(x => x.Slug).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var missingTreatments = seedList.Where(x => !existingSlugs.Contains(x.Slug)).ToList();
+        if (missingTreatments.Count > 0)
+        {
+            await _context.Treatments.InsertManyAsync(missingTreatments, cancellationToken: cancellationToken);
+        }
+    }
+
+    private static List<Treatment> BuildInitialTreatments(
+        string dermatolojiId,
+        string kozmetikId,
+        string sacId,
+        string lazerId)
+    {
+        return new List<Treatment>
         {
             // 1. Lazerle Leke Tedavisi
             new()
@@ -169,7 +280,7 @@ public class DatabaseSeeder
                 CategoryId = dermatolojiId,
                 CategorySlug = "dermatoloji",
                 DisplayOrder = 1,
-                CoverImageUrl = "/images/treatments/lazerle-leke-tedavisi.webp",
+                CoverImageUrl = "/uploads/treatments/lazerle-leke-tedavisi.jpg",
                 Summary = "Güneş lekeleri, melazma, yaşlılık lekeleri ve doğum sonrası oluşan cilt lekelerinde cildin katmanlarına uygun modern lazer protokolleri ile güvenli leke tedavisi.",
                 HtmlContent = @"
                     <h2>Lazerle Leke Tedavisi Nedir?</h2>
@@ -180,9 +291,7 @@ public class DatabaseSeeder
                         <li><strong>Solar Lentigo (Güneş ve Yaşlılık Lekeleri):</strong> Yüz, el sırtı ve dekolte bölgesinde güneşe bağlı gelişen kahverengi lekeler.</li>
                         <li><strong>Çiller (Efelid):</strong> Genetik ve güneş maruziyetiyle belirginleşen pigmentasyonlar.</li>
                         <li><strong>Akne Sonrası Lekeler:</strong> Sivilce iyileşirken kalan kahverengi ve kırmızımsı izler.</li>
-                    </ul>
-                    <h3>Tedavi Süreci ve Dikkat Edilmesi Gerekenler</h3>
-                    <p>Lazer ışığı yalnızca hedef melanin pigmentini parçalayarak çevre dokuya zarar vermeden hücresel düzeyde temizlenme sağlar. İşlem sonrasında düzenli yüksek faktörlü güneş koruyucu kullanımı ve hekimin önerdiği bariyer onarıcı bakım protokolü tedavinin başarısını kalıcı hale getirir.</p>",
+                    </ul>",
                 Faqs = new List<FaqItem>
                 {
                     new()
@@ -194,11 +303,6 @@ public class DatabaseSeeder
                     {
                         Question = "Lazerle leke tedavisi hangi mevsimde yapılmalıdır?",
                         Answer = "Güneş ışınlarının daha dik geldiği yaz ayları yerine sonbahar ve kış aylarında uygulanması, işlem sonrası yeni leke oluşumu riskini en aza indirmek için tercih edilir."
-                    },
-                    new()
-                    {
-                        Question = "İşlem sonrası sosyal hayata hemen dönülebilir mi?",
-                        Answer = "Evet, uygulama sonrasında hafif bir kızarıklık oluşabilir ancak genellikle birkaç saat içinde geriler ve hastalarımız güneş koruyucu kullanarak günlük yaşamlarına devam edebilir."
                     }
                 },
                 Seo = new SeoMetadata
@@ -217,35 +321,24 @@ public class DatabaseSeeder
                 CategoryId = dermatolojiId,
                 CategorySlug = "dermatoloji",
                 DisplayOrder = 2,
-                CoverImageUrl = "/images/treatments/akne-sivilce-tedavisi.webp",
+                CoverImageUrl = "/uploads/treatments/akne-sivilce-tedavisi.png",
                 Summary = "Ergenlik ve yetişkinlik dönemi akne (sivilce) problemlerinde kalıcı iz oluşumunu engelleyen medikal, topikal ve lazer destekli bütüncül dermatolojik tedaviler.",
                 HtmlContent = @"
                     <h2>Akne (Sivilce) Neden Oluşur ve Nasıl Tedavi Edilir?</h2>
-                    <p><strong>Akne vulgaris</strong>, yağ bezlerinin (sebase bezler) aşırı sebum üretimi, gözeneklerin tıkanması (komedon oluşumu) ve <em>Cutibacterium acnes</em> bakterisinin çoğalmasıyla seyreden kronik inflamatuar bir deri hastalığıdır. Yalnızca ergenlik döneminde değil, 25 yaş üstü yetişkinlerde de hormonal faktörler, stres ve yanlış kozmetik kullanımı nedeniyle sıkça görülür.</p>
-                    <h3>Kişiye Özel Akne Tedavi Yaklaşımımız</h3>
-                    <ul>
-                        <li><strong>Klinik Derecelendirme:</strong> Komedonal, papülopüstüler veya nodülokistik akne tipinin belirlenmesi.</li>
-                        <li><strong>Medikal ve Topikal Tedaviler:</strong> Cilt bariyerini bozmadan sebum dengesini sağlayan topikal retinoidler, antibakteriyel ajanlar ve gerekli vakalarda kan tahlili takibiyle sistemik tedaviler.</li>
-                        <li><strong>Akne İzleri (Skar) Önleme:</strong> Aktif sivilceler kontrol altına alındıktan sonra çukur (atrofik skar) ve leke kalmaması için lazer ve peeling protokolleri.</li>
-                    </ul>",
+                    <p><strong>Akne vulgaris</strong>, yağ bezlerinin (sebase bezler) aşırı sebum üretimi, gözeneklerin tıkanması (komedon oluşumu) ve <em>Cutibacterium acnes</em> bakterisinin çoğalmasıyla seyreden kronik inflamatuar bir deri hastalığıdır.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
                     {
                         Question = "Sivilce tedavisinde ne zaman sonuç alınmaya başlanır?",
                         Answer = "Deri yenilenme döngüsü dikkate alındığında, düzenli medikal tedaviyle ilk belirgin iyileşmeler 4-6. haftalarda başlar; tam kontrol genellikle 3-6 ay sürer."
-                    },
-                    new()
-                    {
-                        Question = "Sivilceleri sıkmak neden kalıcı iz bırakır?",
-                        Answer = "Sivilce sıkıldığında folikül duvarı dermis tabakasına doğru yırtılır, iltihap derin dokuya yayılır ve kolajen dokusu hasar görerek kalıcı çukur (skar) veya koyu leke oluşmasına yol açar."
                     }
                 },
                 Seo = new SeoMetadata
                 {
                     MetaTitle = "Akne (Sivilce) Tedavisi Bakırköy | Prof. Dr. Mustafa Özdemir",
                     MetaDescription = "Ergenlik ve yetişkin sivilceleri, kistik akne ve sivilce izleri için Prof. Dr. Mustafa Özdemir kliniğinde bilimsel dermatolojik akne tedavisi.",
-                    FocusKeywords = new List<string> { "akne tedavisi istanbul", "sivilce doktoru bakırköy", "sivilce tedavisi dermatolog", "kistik akne tedavisi" }
+                    FocusKeywords = new List<string> { "akne tedavisi istanbul", "sivilce doktoru bakırköy" }
                 }
             },
 
@@ -257,36 +350,24 @@ public class DatabaseSeeder
                 CategoryId = dermatolojiId,
                 CategorySlug = "dermatoloji",
                 DisplayOrder = 3,
-                CoverImageUrl = "/images/treatments/hpv-genital-sigil-tedavisi.webp",
+                CoverImageUrl = "/uploads/treatments/hpv-genital-sigil-tedavisi.png",
                 Summary = "Human Papilloma Virüsü (HPV) kaynaklı genital siğil (kondilom) lezyonlarında hasta mahremiyetine tam özen gösteren, hızlı ve nüks riskini azaltan dermatolojik tedaviler.",
                 HtmlContent = @"
                     <h2>HPV ve Genital Siğil (Kondilom) Nedir?</h2>
-                    <p><strong>Human Papilloma Virüsü (HPV)</strong>, cilt ve mukozalarda enfeksiyona yol açan ve çoğunlukla cinsel temas yoluyla bulaşan yaygın bir virüstür. Genital bölgede, kasıkta veya perianal bölgede deri renginde ya da kahverengi, karnabahar görünümünde kabarıklıklar (<strong>kondiloma aküminata</strong>) şeklinde kendini gösterir.</p>
-                    <h3>Kliniğimizde Uygulanan Tedavi Yöntemleri</h3>
-                    <p><strong>Prof. Dr. Mustafa Özdemir</strong> kliniğinde hasta gizliliği ve mahremiyeti en üst düzeyde tutularak, lezyonların yaygınlığına ve yerleşim yerine göre en uygun yöntem seçilir:</p>
-                    <ul>
-                        <li><strong>Kriyoterapi (Dondurma Tedavisi):</strong> Sıvı nitrojen ile siğil dokusunun kontrollü olarak tahrip edilmesi.</li>
-                        <li><strong>Elektrokoterizasyon ve Lazer Ablasyon:</strong> Lokal anestezi altında dirençli veya yaygın siğillerin tek seansta temizlenmesi.</li>
-                        <li><strong>İmmünmodülatör Kremler ve Takip Protokolü:</strong> Nüks (tekrarlama) riskini en aza indirmek için bağışıklık destekleyici topikal uygulamalar ve periyodik dermatoskopik kontrol.</li>
-                    </ul>",
+                    <p><strong>Human Papilloma Virüsü (HPV)</strong>, cilt ve mukozalarda enfeksiyona yol açan yaygın bir virüstür. Kliniğimizde hasta gizliliği ve mahremiyeti en üst düzeyde tutularak kriyoterapi, elektrokoterizasyon ve lazer ablasyon yöntemleri uygulanır.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
                     {
                         Question = "Genital siğil işlemi sırasında ağrı hissedilir mi?",
                         Answer = "Uygulama öncesinde sürülen anestezik kremler veya lokal anestezi sayesinde işlem sırasında ağrı hissedilmez ve hasta aynı gün günlük yaşantısına dönebilir."
-                    },
-                    new()
-                    {
-                        Question = "HPV tedavisinden sonra siğiller tekrarlar mı?",
-                        Answer = "Gözle görülmeyen kuluçka dönemindeki virüsler nedeniyle ilk aylarda yeni lezyonlar çıkabilir; bu nedenle ilk 3-6 ay düzenli dermatolog kontrolü ve bağışıklık takibi büyük önem taşır."
                     }
                 },
                 Seo = new SeoMetadata
                 {
                     MetaTitle = "HPV ve Genital Siğil Tedavisi İstanbul | Prof. Dr. Mustafa Özdemir",
-                    MetaDescription = "Bakırköy Ataköy'de Prof. Dr. Mustafa Özdemir tarafından tam mahremiyet ilkesiyle uygulanan lazer, kriyoterapi ve koter ile HPV genital siğil (kondilom) tedavisi.",
-                    FocusKeywords = new List<string> { "hpv tedavisi istanbul", "genital siğil tedavisi bakırköy", "kondilom tedavisi dermatolog", "lazerle genital siğil" }
+                    MetaDescription = "Bakırköy Ataköy'de Prof. Dr. Mustafa Özdemir tarafından tam mahremiyet ilkesiyle uygulanan lazer, kriyoterapi ve koter ile HPV genital siğil tedavisi.",
+                    FocusKeywords = new List<string> { "hpv tedavisi istanbul", "genital siğil tedavisi bakırköy" }
                 }
             },
 
@@ -298,36 +379,24 @@ public class DatabaseSeeder
                 CategoryId = dermatolojiId,
                 CategorySlug = "dermatoloji",
                 DisplayOrder = 4,
-                CoverImageUrl = "/images/treatments/ben-taramasi.webp",
+                CoverImageUrl = "/uploads/corporate/doctor-portrait.jpg",
                 Summary = "Dijital ve el dermatoskopisi ile vücuttaki benlerin (melanositik nevus) detaylı incelenmesi, risk haritalaması ve deri kanserlerinin (melanom) erken tanısı.",
                 HtmlContent = @"
                     <h2>Dermatoskopik Ben Taraması Neden Hayat Kurtarır?</h2>
-                    <p>Vücudumuzdaki benler (melanositik nevuslar) çoğunlukla iyi huylu oluşumlardır; ancak mevcut bir benin yapısında meydana gelen asimetri, sınır düzensizliği, renk alacalanması veya çap artışı (ABCDE kriterleri) en tehlikeli deri kanseri türü olan <strong>Malign Melanom</strong> habercisi olabilir.</p>
-                    <h3>Kimler Düzenli Ben Taraması Yaptırmalıdır?</h3>
-                    <ul>
-                        <li>Açık tenli, renkli gözlü ve güneşte kolay kızaran bireyler,</li>
-                        <li>Vücudunda 50'den fazla beni veya atipik (displastik) beni bulunanlar,</li>
-                        <li>Ailesinde deri kanseri veya melanom öyküsü olanlar,</li>
-                        <li>Son dönemde rengi, şekli veya boyutu değişen, kanayan ya da kaşınan bir ben fark edenler.</li>
-                    </ul>",
+                    <p>Vücudumuzdaki benler çoğunlukla iyi huylu oluşumlardır; ancak mevcut bir benin yapısında meydana gelen asimetri, sınır düzensizliği, renk alacalanması veya çap artışı (ABCDE kriterleri) <strong>Malign Melanom</strong> habercisi olabilir.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
                     {
                         Question = "Ben taraması ne sıklıkla yapılmalıdır?",
-                        Answer = "Risk faktörü bulunmayan bireylerde yılda bir kez, atipik benleri olan veya ailesel risk taşıyan hastalarda ise hekimin önerisine göre 3 ila 6 ayda bir kontrol önerilir."
-                    },
-                    new()
-                    {
-                        Question = "Şüpheli bir benin alınması kansere yol açar mı?",
-                        Answer = "Halk arasındaki 'bıçak değerse kötüleşir' inanışı tamamen yanlıştır. Aksine, şüpheli bir benin cerrahi olarak çıkarılıp patolojik incelemeye gönderilmesi kesin tanı ve hayat kurtarıcı erken tedavi sağlar."
+                        Answer = "Risk faktörü bulunmayan bireylerde yılda bir kez, atipik benleri olan veya ailesel risk taşıyan hastalarda ise 3 ila 6 ayda bir kontrol önerilir."
                     }
                 },
                 Seo = new SeoMetadata
                 {
                     MetaTitle = "Ben Taraması (Dermatoskopi) Bakırköy | Prof. Dr. Mustafa Özdemir",
                     MetaDescription = "Dermatoskopik ben taraması, melanositik nevus takibi ve deri kanseri (melanom) erken tanısı için İstanbul Ataköy'de Prof. Dr. Mustafa Özdemir kliniği.",
-                    FocusKeywords = new List<string> { "ben taraması istanbul", "dermatoskopi bakırköy", "melanositik nevus", "deri kanseri taraması" }
+                    FocusKeywords = new List<string> { "ben taraması istanbul", "dermatoskopi bakırköy" }
                 }
             },
 
@@ -339,26 +408,24 @@ public class DatabaseSeeder
                 CategoryId = dermatolojiId,
                 CategorySlug = "dermatoloji",
                 DisplayOrder = 5,
-                CoverImageUrl = "/images/treatments/sedef-hastaligi.webp",
+                CoverImageUrl = "/uploads/treatments/sedef-hastaligi-psoriasis.png",
                 Summary = "Sedef hastalığında (psoriasis) plakları kontrol altına alan, kaşıntı ve pullanmayı gideren güncel topikal, sistemik ve biyolojik tedavi yaklaşımları.",
                 HtmlContent = @"
                     <h2>Sedef Hastalığı (Psoriasis) Nedir?</h2>
-                    <p><strong>Sedef hastalığı (Psoriasis)</strong>, bağışıklık sisteminin etkisiyle deri hücrelerinin normalden çok daha hızlı yenilenmesi sonucu diz, dirsek, saçlı deri ve gövdede keskin sınırlı, kızarık ve sedef rengi kepeklenmelerle (plaklarla) seyreden kronik, bulaşıcı olmayan bir deri hastalığıdır.</p>
-                    <h3>Güncel Tedavi Yaklaşımlarımız</h3>
-                    <p>Sedef hastalığı bulaşıcı değildir ve günümüzdeki modern dermatolojik tedavilerle lezyonların tamamen kontrol altına alınması mümkündür. Hastalığın şiddetine, tırnak ve eklem tutulumuna göre topikal tedaviler, klasik sistemik ajanlar ve hedefe yönelik yeni nesil biyolojik tedaviler kişiye özel planlanmaktadır.</p>",
+                    <p><strong>Sedef hastalığı (Psoriasis)</strong>, deri hücrelerinin normalden hızlı yenilenmesi sonucu diz, dirsek, saçlı deri ve gövdede sedef rengi kepeklenmelerle seyreden kronik, bulaşıcı olmayan bir deri hastalığıdır.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
                     {
                         Question = "Sedef hastalığı bulaşıcı mıdır?",
-                        Answer = "Hayır, sedef hastalığı kesinlikle bulaşıcı bir enfeksiyon hastalığı değildir; genetik yatkınlık ve bağışıklık sistemi etkileşimiyle gelişir."
+                        Answer = "Hayır, sedef hastalığı kesinlikle bulaşıcı değildir."
                     }
                 },
                 Seo = new SeoMetadata
                 {
                     MetaTitle = "Sedef Hastalığı (Psoriasis) Tedavisi | Prof. Dr. Mustafa Özdemir",
-                    MetaDescription = "İstanbul Bakırköy'de Prof. Dr. Mustafa Özdemir ile sedef hastalığı (psoriasis), saçlı deri ve tırnak sedefi için modern dermatolojik tedavi yöntemleri.",
-                    FocusKeywords = new List<string> { "sedef hastalığı tedavisi", "psoriasis uzmanı istanbul", "sedef doktoru bakırköy" }
+                    MetaDescription = "İstanbul Bakırköy'de Prof. Dr. Mustafa Özdemir ile sedef hastalığı (psoriasis) için modern dermatolojik tedavi yöntemleri.",
+                    FocusKeywords = new List<string> { "sedef hastalığı tedavisi", "psoriasis uzmanı istanbul" }
                 }
             },
 
@@ -370,29 +437,211 @@ public class DatabaseSeeder
                 CategoryId = dermatolojiId,
                 CategorySlug = "dermatoloji",
                 DisplayOrder = 6,
-                CoverImageUrl = "/images/treatments/gul-hastaligi-rozasea.webp",
+                CoverImageUrl = "/uploads/treatments/gul-hastaligi-rozasea.png",
                 Summary = "Yüzde kızarıklık, ateş basması, kılcal damar belirginleşmesi ve sivilce benzeri kabarıklıklarla seyreden rozasea (gül hastalığı) için medikal ve lazer tedavileri.",
                 HtmlContent = @"
                     <h2>Gül Hastalığı (Rozasea) Belirtileri ve Tedavisi</h2>
-                    <p><strong>Rozasea (Gül Hastalığı)</strong>, özellikle yanaklar, burun, alın ve çenede tekrarlayan kızarıklık atakları (flushing), kalıcı kılcal damar genişlemeleri (telenjiektazi) ve iltihaplı kabarıklıklarla karakterize kronik bir yüz дерmatozudur.</p>
-                    <p>Kliniğimizde rozaseayı tetikleyen faktörlerin kontrolü, Demodex parazit yoğunluğunun azaltılmasına yönelik medikal tedaviler ve kalıcı kızarıklık ile kılcal damarlara yönelik vasküler lazer uygulamaları bir arada yürütülür.</p>",
+                    <p><strong>Rozasea (Gül Hastalığı)</strong>, özellikle yanaklar, burun, alın ve çenede tekrarlayan kızarıklık atakları ve kalıcı kılcal damar genişlemeleriyle karakterize kronik bir yüz dermatozudur.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
                     {
                         Question = "Gül hastalığında lazer tedavisi kızarıklığı geçirir mi?",
-                        Answer = "Medikal kremler iltihaplı sivilce benzeri lezyonları düzeltirken, yüzeye yakın genişlemiş kılcal damarlar ve kalıcı kızarıklık (eritem) için lazer tedavileri oldukça yüksek başarı sağlar."
+                        Answer = "Yüzeye yakın genişlemiş kılcal damarlar ve kalıcı kızarıklık (eritem) için vasküler lazer tedavileri yüksek başarı sağlar."
                     }
                 },
                 Seo = new SeoMetadata
                 {
                     MetaTitle = "Gül Hastalığı (Rozasea) Tedavisi İstanbul | Prof. Dr. Mustafa Özdemir",
-                    MetaDescription = "Yüz kızarıklığı ve gül hastalığı (rozasea) tedavisinde medikal protokoller ve kılcal damar lazer uygulamaları. Prof. Dr. Mustafa Özdemir - Ataköy.",
-                    FocusKeywords = new List<string> { "gül hastalığı tedavisi", "rozasea tedavisi istanbul", "yüz kızarıklığı lazer bakırköy" }
+                    MetaDescription = "Yüz kızarıklığı ve gül hastalığı (rozasea) tedavisinde medikal protokoller ve kılcal damar lazer uygulamaları.",
+                    FocusKeywords = new List<string> { "gül hastalığı tedavisi", "rozasea tedavisi istanbul" }
                 }
             },
 
-            // 7. Ameliyatsız İp Askısı (Kozmetik Dermatoloji)
+            // 7. Egzama (Atopik ve Kontakt Dermatit)
+            new()
+            {
+                Title = "Egzama (Dermatit) Tedavisi",
+                Slug = "egzama-tedavisi",
+                CategoryId = dermatolojiId,
+                CategorySlug = "dermatoloji",
+                DisplayOrder = 7,
+                CoverImageUrl = "/uploads/treatments/egzama-tedavisi.png",
+                Summary = "Atopik dermatit, alerjik kontakt dermatit ve el egzamalarında kaşıntı, kızarıklık ve kuruluğu gideren deri bariyeri onarıcı dermatolojik tedaviler.",
+                HtmlContent = @"
+                    <h2>Egzama (Dermatit) Nedir ve Nasıl Tedavi Edilir?</h2>
+                    <p><strong>Egzama</strong>, deri bariyerinin bozulması ve bağışıklık sisteminin çevresel alerjenlere aşırı yanıt vermesi sonucu kızarıklık, şiddetli kaşıntı, kuruluk ve su dolu kabarcıklarla seyreden inflamatuar bir deri hastalığıdır.</p>",
+                Faqs = new List<FaqItem>
+                {
+                    new()
+                    {
+                        Question = "Egzama tamamen kontrol altına alınabilir mi?",
+                        Answer = "Tetikleyici alerjenlerin tespiti, uygun medikal kremler ve düzenli bariyer onarıcı nemlendirici protokolleriyle ataklar tamamen kontrol altına alınabilir."
+                    }
+                },
+                Seo = new SeoMetadata
+                {
+                    MetaTitle = "Egzama (Dermatit) Tedavisi Bakırköy | Prof. Dr. Mustafa Özdemir",
+                    MetaDescription = "Atopik egzama, el egzaması ve alerjik dermatit tedavisi için İstanbul Bakırköy Ataköy'de Prof. Dr. Mustafa Özdemir kliniği.",
+                    FocusKeywords = new List<string> { "egzama tedavisi", "atopik dermatit doktoru" }
+                }
+            },
+
+            // 8. Gece Yanığı (Zona / Herpes Zoster)
+            new()
+            {
+                Title = "Gece Yanığı (Zona) Tedavisi",
+                Slug = "zona-gece-yanigi-tedavisi",
+                CategoryId = dermatolojiId,
+                CategorySlug = "dermatoloji",
+                DisplayOrder = 8,
+                CoverImageUrl = "/uploads/treatments/zona-gece-yanigi-tedavisi.png",
+                Summary = "Suçiçeği virüsünün yeniden aktifleşmesiyle oluşan ağrılı ve su dolu döküntülerle seyreden zona (gece yanığı) hastalığında erken antiviral ve ağrı tedavisi.",
+                HtmlContent = @"
+                    <h2>Zona (Gece Yanığı) Nedir?</h2>
+                    <p><strong>Zona (Herpes Zoster)</strong>, çocuklukta geçirilen suçiçeği virüsünün sinir köklerinde sessiz kaldıktan sonra bağışıklığın düştüğü dönemlerde tek taraflı kuşak tarzında ağrılı döküntülerle yeniden aktifleşmesidir. İlk 72 saat içinde başlanan antiviral tedavi, kalıcı sinir ağrısını (postherpetik nevralji) önlemede kritik önem taşır.</p>",
+                Faqs = new List<FaqItem>(),
+                Seo = new SeoMetadata
+                {
+                    MetaTitle = "Gece Yanığı (Zona) Tedavisi | Prof. Dr. Mustafa Özdemir",
+                    MetaDescription = "Zona (gece yanığı) döküntü ve sinir ağrısı tedavisinde erken dermatolojik müdahale.",
+                    FocusKeywords = new List<string> { "zona tedavisi", "gece yanığı doktoru" }
+                }
+            },
+
+            // 9. Liken Planus Tedavisi
+            new()
+            {
+                Title = "Liken Planus Tedavisi",
+                Slug = "liken-planus-tedavisi",
+                CategoryId = dermatolojiId,
+                CategorySlug = "dermatoloji",
+                DisplayOrder = 9,
+                CoverImageUrl = "/uploads/treatments/liken-planus-tedavisi.png",
+                Summary = "Deri, ağız içi mukozası, tırnak ve saçlı deriyi etkileyebilen morumsu, parlak ve kaşıntılı döküntülerle seyreden liken planus hastalığının tanı ve tedavisi.",
+                HtmlContent = @"
+                    <h2>Liken Planus Nedir?</h2>
+                    <p><strong>Liken Planus</strong>, el bilekleri, ayak bilekleri, gövde ve ağız içi mukozasında kaşıntılı, morumsu-kırmızı lezyonlarla seyreden otoimmün karakterli bir deri ve mukoza hastalığıdır.</p>",
+                Faqs = new List<FaqItem>(),
+                Seo = new SeoMetadata
+                {
+                    MetaTitle = "Liken Planus Tedavisi İstanbul | Prof. Dr. Mustafa Özdemir",
+                    MetaDescription = "Deri ve ağız içi liken planus hastalığı tanı ve tedavisinde Prof. Dr. Mustafa Özdemir kliniği.",
+                    FocusKeywords = new List<string> { "liken planus tedavisi", "ağız içi liken planus" }
+                }
+            },
+
+            // 10. Seboreik Dermatit Tedavisi
+            new()
+            {
+                Title = "Seboreik Dermatit Tedavisi",
+                Slug = "seboreik-dermatit-tedavisi",
+                CategoryId = dermatolojiId,
+                CategorySlug = "dermatoloji",
+                DisplayOrder = 10,
+                CoverImageUrl = "/uploads/treatments/seboreik-dermatit-tedavisi.png",
+                Summary = "Saçlı deri, kaşlar, burun kenarları ve kulak arkasında yağlı kepeklenme ve kızarıklıkla seyreden seboreik dermatit (yağlı egzama) kontrol protokolleri.",
+                HtmlContent = @"
+                    <h2>Seboreik Dermatit (Yağlı Egzama) Nedir?</h2>
+                    <p><strong>Seboreik dermatit</strong>, yağ bezlerinin yoğun olduğu saçlı deri, yüz T bölgesi ve göğüs ortasında kızarıklık, sarımsı yağlı kabuklanma ve kepeklenmeyle seyreden kronik bir tablodur.</p>",
+                Faqs = new List<FaqItem>(),
+                Seo = new SeoMetadata
+                {
+                    MetaTitle = "Seboreik Dermatit Tedavisi | Prof. Dr. Mustafa Özdemir",
+                    MetaDescription = "Saçlı deri ve yüzde seboreik dermatit (yağlı egzama) tedavisi.",
+                    FocusKeywords = new List<string> { "seboreik dermatit tedavisi", "yağlı egzama" }
+                }
+            },
+
+            // 11. Mantar Hastalıkları Tedavisi
+            new()
+            {
+                Title = "Mantar Hastalıkları Tedavisi",
+                Slug = "mantar-hastaliklari-tedavisi",
+                CategoryId = dermatolojiId,
+                CategorySlug = "dermatoloji",
+                DisplayOrder = 11,
+                CoverImageUrl = "/uploads/treatments/mantar-hastaliklari-tedavisi.png",
+                Summary = "Ayak, kasık, gövde, saçlı deri ve tırnaklarda görülen yüzeyel mantar enfeksiyonlarının (tinea, kandidiyazis, pitriyazis versikolor) mikroskobik tanı ve tedavisi.",
+                HtmlContent = @"
+                    <h2>Deri ve Tırnak Mantarı Enfeksiyonları</h2>
+                    <p>Mantar enfeksiyonları direkt mikroskobik inceleme (native preparat) ve kültür ile doğru teşhis edildiğinde hedefe yönelik topikal ve sistemik antifungal ajanlarla kalıcı olarak tedavi edilir.</p>",
+                Faqs = new List<FaqItem>(),
+                Seo = new SeoMetadata
+                {
+                    MetaTitle = "Deri ve Tırnak Mantarı Tedavisi | Prof. Dr. Mustafa Özdemir",
+                    MetaDescription = "Ayak, kasık, gövde ve tırnak mantarı hastalıklarında dermatolojik tanı ve tedavi.",
+                    FocusKeywords = new List<string> { "mantar hastalıkları tedavisi", "deri mantarı doktoru" }
+                }
+            },
+
+            // 12. Tırnak Hastalıkları Tedavisi
+            new()
+            {
+                Title = "Tırnak Hastalıkları Tedavisi",
+                Slug = "tirnak-hastaliklari-tedavisi",
+                CategoryId = dermatolojiId,
+                CategorySlug = "dermatoloji",
+                DisplayOrder = 12,
+                CoverImageUrl = "/uploads/treatments/tirnak-hastaliklari-tedavisi.png",
+                Summary = "Tırnak mantarı (onikomikoz), tırnak batması, tırnak sedefi, tırnak kırılmaları ve tırnak altı renk değişimlerinin (melanonişi) dermatoskopik tanı ve tedavisi.",
+                HtmlContent = @"
+                    <h2>Tırnak Hastalıkları Nelerdir?</h2>
+                    <p>Tırnaklardaki şekil ve renk bozuklukları yalnızca mantar kaynaklı olmayabilir; sedef hastalığı, liken planus, sistemik vitamin eksiklikleri veya tırnak yatağı tümörleri dermatoskopik muayene ile ayırt edilerek tedavi planlanır.</p>",
+                Faqs = new List<FaqItem>(),
+                Seo = new SeoMetadata
+                {
+                    MetaTitle = "Tırnak Hastalıkları ve Tırnak Mantarı Tedavisi | Prof. Dr. Mustafa Özdemir",
+                    MetaDescription = "Tırnak mantarı, tırnak batması ve tırnak sedefi tedavileri.",
+                    FocusKeywords = new List<string> { "tırnak hastalıkları doktoru", "tırnak mantarı tedavisi" }
+                }
+            },
+
+            // 13. Uçuk (Herpes Simpleks) Tedavisi
+            new()
+            {
+                Title = "Uçuk (Herpes Simpleks) Tedavisi",
+                Slug = "ucuk-herpes-tedavisi",
+                CategoryId = dermatolojiId,
+                CategorySlug = "dermatoloji",
+                DisplayOrder = 13,
+                CoverImageUrl = "/uploads/treatments/ucuk-herpes-tedavisi.png",
+                Summary = "Dudak çevresi (oral herpes) ve genital bölgede tekrarlayan uçuk (Herpes Simpleks Virüsü) enfeksiyonlarında atak tedavisi ve baskılayıcı koruma protokolleri.",
+                HtmlContent = @"
+                    <h2>Tekrarlayan Uçuk (Herpes) Enfeksiyonları</h2>
+                    <p>Herpes Simpleks Tip 1 ve Tip 2 virüslerinin neden olduğu dudak ve genital bölge uçuklarında erken antiviral tedavi ile iyileşme süresi kısaltılır; sık tekrarlayan vakalarda süpresyon (baskılama) protokolü uygulanır.</p>",
+                Faqs = new List<FaqItem>(),
+                Seo = new SeoMetadata
+                {
+                    MetaTitle = "Uçuk (Herpes Simpleks) Tedavisi | Prof. Dr. Mustafa Özdemir",
+                    MetaDescription = "Dudak ve genital uçuk (herpes) enfeksiyonlarında dermatolojik tedavi.",
+                    FocusKeywords = new List<string> { "uçuk tedavisi", "genital herpes tedavisi" }
+                }
+            },
+
+            // 14. Çocukta Deri Hastalıkları (Pediatrik Dermatoloji)
+            new()
+            {
+                Title = "Çocukta Deri Hastalıkları",
+                Slug = "cocuk-deri-hastaliklari",
+                CategoryId = dermatolojiId,
+                CategorySlug = "dermatoloji",
+                DisplayOrder = 14,
+                CoverImageUrl = "/uploads/treatments/cocuk-deri-hastaliklari.png",
+                Summary = "Bebek ve çocuklarda görülen atopik dermatit (bebek egzaması), bez dermatiti, molluskum kontagiozum, siğiller, doğum lekeleri (hemanjiyom) ve viral döküntülerin tedavisi.",
+                HtmlContent = @"
+                    <h2>Pediatrik Dermatoloji (Çocuk Cilt Sağlığı)</h2>
+                    <p>Çocukların deri yapısı yetişkinlere göre çok daha ince ve hassastır. Bebeklik egzaması, molluskum, siğiller ve doğum lekeleri çocuk cildine uygun güvenli protokollerle takip ve tedavi edilir.</p>",
+                Faqs = new List<FaqItem>(),
+                Seo = new SeoMetadata
+                {
+                    MetaTitle = "Çocukta Deri Hastalıkları (Pediatrik Dermatoloji) | Prof. Dr. Mustafa Özdemir",
+                    MetaDescription = "Bebek ve çocuklarda egzama, alerji, siğil ve doğum lekeleri için uzman dermatolog muayenesi.",
+                    FocusKeywords = new List<string> { "çocuk dermatoloji istanbul", "bebek egzaması tedavisi" }
+                }
+            },
+
+            // 15. Ameliyatsız İp Askısı (Kozmetik Dermatoloji)
             new()
             {
                 Title = "Ameliyatsız İp Askısı",
@@ -400,17 +649,11 @@ public class DatabaseSeeder
                 CategoryId = kozmetikId,
                 CategorySlug = "kozmetik-dermatoloji",
                 DisplayOrder = 1,
-                CoverImageUrl = "/images/treatments/ameliyatsiz-ip-askisi.webp",
+                CoverImageUrl = "/uploads/corporate/hero-showroom.jpg",
                 Summary = "Cerrahi müdahale gerektirmeden yüz ovalini toparlayan, yanak ve çene hattındaki (jawline) sarkmaları gideren biyouyumlu ip askı uygulamaları.",
                 HtmlContent = @"
                     <h2>Ameliyatsız İp Askısı ile Yüz Gençleştirme</h2>
-                    <p>Yaş alma ve yerçekiminin etkisiyle yüzdeki bağ dokusu gevşer, yanaklar aşağı doğru yer değiştirir ve çene hattı belirginliğini kaybeder. <strong>Ameliyatsız ip askısı</strong>, cilt altına yerleştirilen eriyebilir ve biyouyumlu medikal ipler aracılığıyla sarkan dokuların anatomik vektörlere uygun şekilde yukarı taşınması işlemidir.</p>
-                    <h3>Avantajları Nelerdir?</h3>
-                    <ul>
-                        <li>Genel anestezi ve cerrahi kesi gerektirmez, lokal anestezi altında yaklaşık 30-45 dakikada tamamlanır.</li>
-                        <li>Mekanik kaldırma etkisinin yanı sıra, iplerin çevresinde yeni kolajen sentezini tetikleyerek cilt kalitesini artırır.</li>
-                        <li>Doğal yüz ifadesini ve mimikleri bozmadan genç ve dinç bir görünüm sağlar.</li>
-                    </ul>",
+                    <p>Cilt altına yerleştirilen eriyebilir ve biyouyumlu medikal ipler aracılığıyla sarkan dokuların anatomik vektörlere uygun şekilde yukarı taşınması işlemidir.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
@@ -423,11 +666,11 @@ public class DatabaseSeeder
                 {
                     MetaTitle = "Ameliyatsız İp Askısı İstanbul | Prof. Dr. Mustafa Özdemir",
                     MetaDescription = "Yüz sarkmaları ve yüz ovali toparlama için uzman dermatolog Prof. Dr. Mustafa Özdemir tarafından uygulanan ameliyatsız ip askısı işlemi.",
-                    FocusKeywords = new List<string> { "ameliyatsız ip askısı", "iple yüz germe bakırköy", "kozmetik dermatoloji ataköy" }
+                    FocusKeywords = new List<string> { "ameliyatsız ip askısı", "iple yüz germe bakırköy" }
                 }
             },
 
-            // 8. Kimyasal Peeling ve Karbon Peeling (Kozmetik Dermatoloji)
+            // 16. Kimyasal Peeling ve Karbon Peeling (Kozmetik Dermatoloji)
             new()
             {
                 Title = "Kimyasal Peeling ve Karbon Peeling",
@@ -435,28 +678,28 @@ public class DatabaseSeeder
                 CategoryId = kozmetikId,
                 CategorySlug = "kozmetik-dermatoloji",
                 DisplayOrder = 2,
-                CoverImageUrl = "/images/treatments/kimyasal-peeling.webp",
+                CoverImageUrl = "/uploads/treatments/lazerle-leke-tedavisi.jpg",
                 Summary = "Gözenek sıkılaştırma, cilt tonu eşitleme, ince kırışıklıklar ve akne izlerinde kontrollü cilt soyma (kimyasal peeling) ve lazer destekli karbon peeling uygulamaları.",
                 HtmlContent = @"
                     <h2>Kimyasal Peeling ve Karbon Peeling Nedir?</h2>
-                    <p>Cildin yıpranmış üst tabakasının kontrollü bir şekilde arındırılarak alttan daha taze, parlak ve homojen bir deri dokusunun gelmesini sağlayan dermatolojik yenileme işlemleridir. Cilt tipine göre meyve asitleri (AHA/BHA), TCA veya enzimatik ajanlar tercih edilirken; dört mevsim uygulanabilen <strong>Karbon Peeling</strong> ile gözenek sıkılaştırma ve sebum dengeleme sağlanır.</p>",
+                    <p>Cildin yıpranmış üst tabakasının kontrollü bir şekilde arındırılarak alttan daha taze, parlak ve homojen bir deri dokusunun gelmesini sağlayan dermatolojik yenileme işlemleridir.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
                     {
                         Question = "Karbon peeling işleminden sonra ciltte soyulma olur mu?",
-                        Answer = "Karbon peeling cilt yüzeyinde kabuklanma veya soyulma yapmaz; öğle arası işlemi olarak da bilinir ve hemen sonrasında günlük hayata devam edilebilir."
+                        Answer = "Karbon peeling cilt yüzeyinde kabuklanma veya soyulma yapmaz; hemen sonrasında günlük hayata devam edilebilir."
                     }
                 },
                 Seo = new SeoMetadata
                 {
                     MetaTitle = "Kimyasal Peeling ve Karbon Peeling | Prof. Dr. Mustafa Özdemir",
                     MetaDescription = "Bakırköy Ataköy'de leke, gözenek sıkılaştırma ve cilt yenileme için uzman dermatolog kontrolünde kimyasal peeling ve karbon peeling.",
-                    FocusKeywords = new List<string> { "kimyasal peeling istanbul", "karbon peeling bakırköy", "gözenek sıkılaştırma" }
+                    FocusKeywords = new List<string> { "kimyasal peeling istanbul", "karbon peeling bakırköy" }
                 }
             },
 
-            // 9. Hiperhidroz (Aşırı Terleme) Tedavisi (Kozmetik Dermatoloji)
+            // 17. Hiperhidroz (Aşırı Terleme) Tedavisi (Kozmetik Dermatoloji)
             new()
             {
                 Title = "Hiperhidroz (Aşırı Terleme) Tedavisi",
@@ -464,11 +707,11 @@ public class DatabaseSeeder
                 CategoryId = kozmetikId,
                 CategorySlug = "kozmetik-dermatoloji",
                 DisplayOrder = 3,
-                CoverImageUrl = "/images/treatments/hiperhidroz-tedavisi.webp",
+                CoverImageUrl = "/uploads/corporate/doctor-portrait.jpg",
                 Summary = "Koltuk altı, avuç içi ve ayak tabanında sosyal yaşamı zorlaştıran aşırı terleme (hiperhidroz) probleminde hızlı ve konforlu dermatolojik tedavi.",
                 HtmlContent = @"
                     <h2>Aşırı Terleme (Hiperhidroz) Nasıl Kontrol Altına Alınır?</h2>
-                    <p>Vücut ısısını dengelemek için gerekenin çok üzerinde ter üretilmesi durumuna <strong>hiperhidroz</strong> adı verilir. Özellikle koltuk altı, el içi ve ayak tabanında görülen bölgesel aşırı terleme, ter bezlerine giden aşırı sinir uyarılarını geçici olarak bloke eden mikro-enjeksiyon ve medikal dermatolojik uygulamalarla 15-20 dakika içinde güvenle kontrol altına alınmaktadır.</p>",
+                    <p>Özellikle koltuk altı, el içi ve ayak tabanında görülen bölgesel aşırı terleme, ter bezlerine giden aşırı sinir uyarılarını geçici olarak bloke eden mikro-enjeksiyon ve medikal dermatolojik uygulamalarla 15-20 dakika içinde güvenle kontrol altına alınmaktadır.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
@@ -481,11 +724,11 @@ public class DatabaseSeeder
                 {
                     MetaTitle = "Aşırı Terleme (Hiperhidroz) Tedavisi | Prof. Dr. Mustafa Özdemir",
                     MetaDescription = "Koltuk altı, el ve ayak aşırı terleme (hiperhidroz) tedavisinde İstanbul Bakırköy'de Prof. Dr. Mustafa Özdemir kliniğinde kalıcı konfor.",
-                    FocusKeywords = new List<string> { "aşırı terleme tedavisi", "hiperhidroz tedavisi istanbul", "koltuk altı terleme tedavisi bakırköy" }
+                    FocusKeywords = new List<string> { "aşırı terleme tedavisi", "hiperhidroz tedavisi istanbul" }
                 }
             },
 
-            // 10. Saç Dökülmesi ve Saç Mezoterapisi (Saç Hastalıkları)
+            // 18. Saç Dökülmesi ve Saç Mezoterapisi (Saç Hastalıkları)
             new()
             {
                 Title = "Saç Dökülmesi ve Saç Mezoterapisi",
@@ -493,11 +736,11 @@ public class DatabaseSeeder
                 CategoryId = sacId,
                 CategorySlug = "sac-hastaliklari",
                 DisplayOrder = 1,
-                CoverImageUrl = "/images/treatments/sac-mezoterapisi.webp",
+                CoverImageUrl = "/uploads/treatments/seboreik-dermatit-tedavisi.png",
                 Summary = "Erkek ve kadın tipi saç dökülmeleri, telogen effluvium ve saç kıran (alopesi areata) vakalarında kökleri besleyen saç mezoterapisi ve dermatolojik tedaviler.",
                 HtmlContent = @"
                     <h2>Saç Dökülmesinin Dermatolojik Tanısı ve Saç Mezoterapisi</h2>
-                    <p>Saç dökülmesi; genetik yatkınlık (androgenetik alopesi), demir/çinko/biotin/D vitamini eksiklikleri, tiroid hastalıkları veya stres sonrası (telogen effluvium) gelişebilir. <strong>Prof. Dr. Mustafa Özdemir</strong> tarafından yapılan trikoskopik muayene ile dökülmenin nedeni saptanır ve saç köklerinin ihtiyaç duyduğu vitamin, mineral, aminoasit ve büyüme faktörleri <strong>Saç Mezoterapisi</strong> ile doğrudan kıl foliküllerine ulaştırılır.</p>",
+                    <p><strong>Prof. Dr. Mustafa Özdemir</strong> tarafından yapılan trikoskopik muayene ile dökülmenin nedeni saptanır ve saç köklerinin ihtiyaç duyduğu vitamin, mineral, aminoasit ve büyüme faktörleri <strong>Saç Mezoterapisi</strong> ile doğrudan kıl foliküllerine ulaştırılır.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
@@ -510,11 +753,11 @@ public class DatabaseSeeder
                 {
                     MetaTitle = "Saç Dökülmesi ve Saç Mezoterapisi Bakırköy | Prof. Dr. Mustafa Özdemir",
                     MetaDescription = "Kadın ve erkek saç dökülmesi, saç kıran ve saç mezoterapisi tedavilerinde İstanbul Ataköy'de Prof. Dr. Mustafa Özdemir uzmanlığı.",
-                    FocusKeywords = new List<string> { "saç dökülmesi doktoru", "saç mezoterapisi bakırköy", "saç kıran tedavisi istanbul" }
+                    FocusKeywords = new List<string> { "saç dökülmesi doktoru", "saç mezoterapisi bakırköy" }
                 }
             },
 
-            // 11. Lazerle Dövme Silme (Lazer)
+            // 19. Lazerle Dövme Silme (Lazer)
             new()
             {
                 Title = "Lazerle Dövme Silme",
@@ -522,33 +765,28 @@ public class DatabaseSeeder
                 CategoryId = lazerId,
                 CategorySlug = "lazer",
                 DisplayOrder = 1,
-                CoverImageUrl = "/images/treatments/dovme-silme.webp",
+                CoverImageUrl = "/uploads/treatments/dovme-silme.jpg",
                 Summary = "İstenmeyen siyah ve renkli dövmelerin (tattoo) ve kalıcı makyaj uygulamalarının cilt dokusuna zarar vermeden Q-Switched lazer teknolojisi ile silinmesi.",
                 HtmlContent = @"
                     <h2>Lazerle Dövme Silme Nasıl Çalışır?</h2>
-                    <p>Lazerle dövme silme işleminde, çok kısa sürede yüksek enerjili ışık atımları üreten lazer sistemleri kullanılır. Bu ışık enerjisi normal deri dokusundan geçerek yalnızca dermis tabakasındaki dövme boyası (pigment) partiküllerini hedef alır. Parçalanan mikro-pigmentler vücudun doğal savunma hücreleri (makrofajlar) tarafından lenf sistemi yoluyla uzaklaştırılır.</p>",
+                    <p>Lazerle dövme silme işleminde, çok kısa sürede yüksek enerjili ışık atımları üreten lazer sistemleri kullanılır. Bu ışık enerjisi normal deri dokusundan geçerek yalnızca dermis tabakasındaki dövme boyası partiküllerini hedef alır.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
                     {
                         Question = "Dövme silme işlemi iz bırakır mı?",
-                        Answer = "Uzman dermatolog kontrolünde, dövmenin rengine ve derinliğine uygun dalga boyu ve enerji dozları seçildiğinde ciltte kalıcı iz kalma riski son derece düşüktür."
-                    },
-                    new()
-                    {
-                        Question = "Seans aralıkları ne kadardır?",
-                        Answer = "Parçalanan boya partiküllerinin vücuttan atılması ve cildin tamamen iyileşmesi için seanslar arasında genellikle 6-8 hafta beklenir."
+                        Answer = "Uzman dermatolog kontrolünde, dövmenin rengine ve derinliğine uygun dalga boyu seçildiğinde ciltte kalıcı iz kalma riski son derece düşüktür."
                     }
                 },
                 Seo = new SeoMetadata
                 {
                     MetaTitle = "Lazerle Dövme Silme İstanbul | Prof. Dr. Mustafa Özdemir - Bakırköy",
-                    MetaDescription = "Bakırköy Ataköy'de uzman dermatolog Prof. Dr. Mustafa Özdemir kontrolünde iz bırakmayan güvenli lazerle dövme silme ve kalıcı makyaj silme.",
-                    FocusKeywords = new List<string> { "lazerle dövme silme", "dövme silme istanbul", "dövme sildirme bakırköy" }
+                    MetaDescription = "Bakırköy Ataköy'de uzman dermatolog Prof. Dr. Mustafa Özdemir kontrolünde iz bırakmayan güvenli lazerle dövme silme.",
+                    FocusKeywords = new List<string> { "lazerle dövme silme", "dövme silme istanbul" }
                 }
             },
 
-            // 12. Kılcal Damar ve Varis Lazer Tedavisi (Lazer)
+            // 20. Kılcal Damar ve Varis Lazer Tedavisi (Lazer)
             new()
             {
                 Title = "Kılcal Damar, Varis ve Sivilce İzleri Lazer Tedavisi",
@@ -556,11 +794,11 @@ public class DatabaseSeeder
                 CategoryId = lazerId,
                 CategorySlug = "lazer",
                 DisplayOrder = 2,
-                CoverImageUrl = "/images/treatments/kilcal-damar-lazer.webp",
+                CoverImageUrl = "/uploads/treatments/gul-hastaligi-rozasea.png",
                 Summary = "Yüz, burun kenarı ve bacaklardaki kılcal damar genişlemeleri (telenjiektazi), sivilce izleri ve cilt yenilemede hedefe yönelik lazer uygulamaları.",
                 HtmlContent = @"
                     <h2>Kılcal Damar ve Cilt Yenilemede Lazer Teknolojisi</h2>
-                    <p>Yüzde burun kanatları ve yanaklarda veya bacaklarda ince kırmızı-mor çizgiler halinde görülen kılcal damar genişlemeleri, damar içindeki oksihemoglobin maddesini hedef alan vasküler lazerlerle çevre dokuya hasar vermeden koagüle edilerek yok edilir. Aynı zamanda fraksiyonel lazer protokollerimizle sivilce izleri (akne skarları), gözenek genişliği ve cilt çatlaklarında kolajen üretimi yeniden tetiklenir.</p>",
+                    <p>Yüzde burun kanatları ve yanaklarda veya bacaklarda ince kırmızı-mor çizgiler halinde görülen kılcal damar genişlemeleri, vasküler lazerlerle çevre dokuya hasar vermeden koagüle edilerek yok edilir.</p>",
                 Faqs = new List<FaqItem>
                 {
                     new()
@@ -573,18 +811,30 @@ public class DatabaseSeeder
                 {
                     MetaTitle = "Kılcal Damar ve Sivilce İzi Lazer Tedavisi | Prof. Dr. Mustafa Özdemir",
                     MetaDescription = "Yüz ve bacak kılcal damar tedavisi, sivilce izleri ve lazerle cilt yenileme için İstanbul Bakırköy Ataköy'de Prof. Dr. Mustafa Özdemir kliniği.",
-                    FocusKeywords = new List<string> { "kılcal damar lazer tedavisi", "yüzdeki kılcal damarlar", "sivilce izi lazer tedavisi bakırköy" }
+                    FocusKeywords = new List<string> { "kılcal damar lazer tedavisi", "yüzdeki kılcal damarlar" }
                 }
             }
         };
-
-        await _context.Treatments.InsertManyAsync(treatments, cancellationToken: cancellationToken);
     }
 
     private async Task SeedBlogsAsync(CancellationToken cancellationToken)
     {
-        if (await _context.BlogPosts.Find(_ => true).AnyAsync(cancellationToken))
+        var existingBlogs = await _context.BlogPosts.Find(_ => true).ToListAsync(cancellationToken);
+        if (existingBlogs.Count > 0)
+        {
+            foreach (var b in existingBlogs)
+            {
+                if (string.IsNullOrWhiteSpace(b.CoverImageUrl) || b.CoverImageUrl.StartsWith("/images/"))
+                {
+                    b.CoverImageUrl = b.Slug.Contains("gunes-lekeleri")
+                        ? "/uploads/treatments/lazerle-leke-tedavisi.jpg"
+                        : "/uploads/corporate/doctor-portrait.jpg";
+                    b.UpdatedAt = DateTime.UtcNow;
+                    await _context.BlogPosts.ReplaceOneAsync(x => x.Id == b.Id, b, cancellationToken: cancellationToken);
+                }
+            }
             return;
+        }
 
         var blogs = new List<BlogPost>
         {
@@ -593,7 +843,7 @@ public class DatabaseSeeder
                 Title = "Güneş Lekeleri ve Melazmadan Korunmak İçin Dermatolojik Öneriler",
                 Slug = "gunes-lekeleri-ve-melazmadan-korunmak-icin-oneriler",
                 Summary = "Cilt lekelerinin oluşum mekanizması, doğru güneş koruyucu seçimi ve sonbahar-kış döneminde uygulanan lazerle leke tedavisi hakkında bilmeniz gerekenler.",
-                CoverImageUrl = "/images/blog/gunes-lekeleri-korunma.webp",
+                CoverImageUrl = "/uploads/treatments/lazerle-leke-tedavisi.jpg",
                 Author = "Prof. Dr. Mustafa Özdemir",
                 Tags = new List<string> { "Leke Tedavisi", "Güneş Koruyucu", "Melazma", "Dermatoloji" },
                 HtmlContent = @"
@@ -614,7 +864,7 @@ public class DatabaseSeeder
                 Title = "Vücudunuzdaki Benlerde Hangi Değişiklikler Ciddiye Alınmalı? (ABCDE Kuralı)",
                 Slug = "benlerde-hangi-degisiklikler-ciddiye-alinmali-abcde-kurali",
                 Summary = "Malign melanom erken tanısında hayat kurtaran ABCDE kuralı ve yıllık dermatoskopik ben taramasının önemi.",
-                CoverImageUrl = "/images/blog/ben-taramasi-abcde.webp",
+                CoverImageUrl = "/uploads/corporate/doctor-portrait.jpg",
                 Author = "Prof. Dr. Mustafa Özdemir",
                 Tags = new List<string> { "Ben Taraması", "Dermatoskopi", "Deri Kanseri", "Melanom" },
                 HtmlContent = @"
@@ -640,4 +890,3 @@ public class DatabaseSeeder
         await _context.BlogPosts.InsertManyAsync(blogs, cancellationToken: cancellationToken);
     }
 }
-

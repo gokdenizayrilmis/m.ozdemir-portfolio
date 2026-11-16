@@ -1,6 +1,8 @@
 export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000/api'
+  process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5145/api'
 ).replace('localhost', '127.0.0.1');
+
+export const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
 export const API_ENDPOINTS = {
   AUTH: {
@@ -47,10 +49,10 @@ export const API_ENDPOINTS = {
   },
   MEDIA: {
     BASE: '/media',
-    UPLOAD: (folder: string = 'uploads') =>
+    UPLOAD: (folder: string = 'general') =>
       `/media/upload?folder=${encodeURIComponent(folder)}`,
-    DELETE: (imageUrl: string) =>
-      `/media?imageUrl=${encodeURIComponent(imageUrl)}`,
+    DELETE: (fileUrl: string) =>
+      `/media?fileUrl=${encodeURIComponent(fileUrl)}`,
   },
 } as const;
 
