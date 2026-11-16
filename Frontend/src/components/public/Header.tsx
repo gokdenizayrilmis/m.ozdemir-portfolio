@@ -59,14 +59,23 @@ export default function Header({ categories, treatments, settings }: HeaderProps
     trackConversionClick('WhatsAppClick', window.location.pathname);
   };
 
-  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleHomeSectionClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    sectionId?: string
+  ) => {
     setMobileMenuOpen(false);
-    if (isHomePage) {
-      const target = document.getElementById('iletisim');
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+    if (!isHomePage) return;
+
+    if (!sectionId) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const target = document.getElementById(sectionId);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -98,6 +107,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
           {/* Left: Clickable Logo Emblem Only (Completely Transparent Background) */}
           <Link
             href="/"
+            onClick={(e) => handleHomeSectionClick(e)}
             aria-label={
               settings?.doctorName || 'Prof. Dr. Mustafa Özdemir Ana Sayfa'
             }
@@ -129,6 +139,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
           >
             <Link
               href="/"
+              onClick={(e) => handleHomeSectionClick(e)}
               className={`transition whitespace-nowrap py-2 ${
                 isTransparent ? 'hover:text-peach-200' : 'hover:text-bronze-600'
               }`}
@@ -137,7 +148,8 @@ export default function Header({ categories, treatments, settings }: HeaderProps
             </Link>
 
             <Link
-              href="/hakkimizda"
+              href="/#hakkimda"
+              onClick={(e) => handleHomeSectionClick(e, 'hakkimda')}
               className={`transition whitespace-nowrap py-2 ${
                 isTransparent ? 'hover:text-peach-200' : 'hover:text-bronze-600'
               }`}
@@ -253,7 +265,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
 
             <Link
               href="/#iletisim"
-              onClick={handleContactClick}
+              onClick={(e) => handleHomeSectionClick(e, 'iletisim')}
               className={`transition whitespace-nowrap py-2 ${
                 isTransparent ? 'hover:text-peach-200' : 'hover:text-bronze-600'
               }`}
@@ -299,14 +311,14 @@ export default function Header({ categories, treatments, settings }: HeaderProps
           <div className="lg:hidden bg-white border-b border-bronze-200 px-6 py-6 shadow-xl space-y-3 max-h-[82vh] overflow-y-auto">
             <Link
               href="/"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => handleHomeSectionClick(e)}
               className="block text-sm font-bold text-espresso-900 hover:text-bronze-700 py-1"
             >
               Anasayfa
             </Link>
             <Link
-              href="/hakkimizda"
-              onClick={() => setMobileMenuOpen(false)}
+              href="/#hakkimda"
+              onClick={(e) => handleHomeSectionClick(e, 'hakkimda')}
               className="block text-sm font-bold text-espresso-900 hover:text-bronze-700 py-1"
             >
               Hakkımızda
@@ -371,7 +383,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
             </Link>
             <Link
               href="/#iletisim"
-              onClick={handleContactClick}
+              onClick={(e) => handleHomeSectionClick(e, 'iletisim')}
               className="block text-sm font-bold text-espresso-900 hover:text-bronze-700 py-1"
             >
               İletişim

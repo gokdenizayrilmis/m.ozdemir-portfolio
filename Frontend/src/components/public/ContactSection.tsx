@@ -1,6 +1,6 @@
 import { SiteSettings } from '@/types';
 import { FadeIn } from '@/components/public/MotionPrimitives';
-import { Phone, Mail, MapPin, Clock, MessageCircle } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, MessageCircle, Info } from 'lucide-react';
 import { createWhatsAppUrl } from '@/utils/cn';
 
 interface ContactSectionProps {
@@ -86,27 +86,6 @@ export default function ContactSection({ settings }: ContactSectionProps) {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-emerald-50 rounded-xl text-emerald-700 shrink-0">
-                  <MessageCircle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-espresso-900 text-sm">
-                    WhatsApp Randevu Hattı
-                  </h3>
-                  <p className="text-xs text-espresso-800/75 mt-1">
-                    <a
-                      href={waUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-700 hover:underline font-semibold"
-                    >
-                      Mesaj Göndermek İçin Tıklayın
-                    </a>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
                 <div className="p-3 bg-peach-50 rounded-xl text-bronze-700 shrink-0">
                   <Mail className="w-5 h-5" />
                 </div>
@@ -138,6 +117,14 @@ export default function ContactSection({ settings }: ContactSectionProps) {
                     (Pazar günleri kapalıdır)
                   </p>
                 </div>
+              </div>
+
+              <div className="flex items-start gap-3 bg-peach-50/70 border border-peach-200/70 rounded-2xl p-3.5">
+                <Info className="w-4 h-4 text-bronze-700 shrink-0 mt-0.5" />
+                <p className="text-xs text-espresso-800/80 leading-relaxed">
+                  Randevu ve bilgi talepleriniz için bize dilediğiniz zaman ulaşabilirsiniz. 
+                  Ekibimiz, mesai saatleri içerisinde en kısa sürede sizinle iletişime geçecektir
+                </p>
               </div>
             </div>
 

@@ -18,7 +18,7 @@ export default function Footer({ categories, settings }: FooterProps) {
   return (
     <footer className="bg-espresso-950 text-peach-100/75 text-sm border-t border-espresso-900 pb-20 lg:pb-0">
       {/* Upper Footer */}
-      <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 xl:gap-10">
         {/* Brand Column */}
         <div className="space-y-4">
           <h3 className="text-xl font-serif font-bold text-white tracking-tight">
@@ -124,23 +124,33 @@ export default function Footer({ categories, settings }: FooterProps) {
             </div>
           </div>
         </div>
+
+        {/* Legal Notice Column */}
+        <div className="space-y-4 md:col-span-2 lg:col-span-1">
+          <h4 className="text-white font-semibold text-sm tracking-wide uppercase">
+            Bilgilendirme
+          </h4>
+          <p className="text-peach-100/70 text-xs leading-relaxed">
+            Bu sitede yer alan hiç bir bilgi referans olarak kabul edilmemeli,
+            hekim gözetimi olmaksızın bu bilgiler ışığında uygulama
+            yapılmamalıdır. Bu site kozmetoloji ve lazer epilasyon uygulamaları
+            hakkında genel bilgiler sunar, reklam amacı gütmez, T.C Sağlık
+            Bakanlığı yönergeleri ışığında medikal estetik uygulamaları ve lazer
+            epilasyon fiyatlarını belirtmez. Lütfen her türlü uygulama için
+            hekiminize danışınız.
+          </p>
+        </div>
       </div>
 
-      {/* Mandatory Health Ministry Legal Notice */}
-      <div className="bg-espresso-900/90 border-t border-espresso-800 py-6">
-        <div className="max-w-7xl mx-auto px-6 text-center text-xs text-peach-100/60 leading-relaxed">
-          <p>
-            {settings?.legalNotice ||
-              'T.C. Sağlık Bakanlığı mevzuatı ve Tabip Odası kuralları gereğince sitemizde işlem fiyatları belirtilmemektedir. Sitede yer alan tüm içerikler yalnızca ziyaretçileri bilgilendirme amaçlı hazırlanmıştır. Tanı ve tedavi işlemleri için mutlaka hekiminize başvurunuz.'}
-          </p>
-          <div className="mt-4 pt-4 border-t border-espresso-800 text-[11px] flex flex-col sm:flex-row justify-between items-center gap-2">
-            <span>
-              © {currentYear} Prof. Dr. Mustafa Özdemir. Tüm Hakları Saklıdır.
-            </span>
-            <span className="text-bronze-400/70">
-              Ataköy Towers, Bakırköy / İstanbul • Klinik CMS Altyapısı
-            </span>
-          </div>
+      {/* Bottom Copyright Bar */}
+      <div className="bg-espresso-900/90 border-t border-espresso-800 py-5">
+        <div className="max-w-7xl mx-auto px-6 text-[11px] text-peach-100/60 flex flex-col sm:flex-row justify-between items-center gap-2">
+          <span>
+            © {currentYear} Prof. Dr. Mustafa Özdemir. Tüm Hakları Saklıdır.
+          </span>
+          <span className="text-bronze-400/70">
+            Ataköy Towers, Bakırköy / İstanbul • Klinik CMS Altyapısı
+          </span>
         </div>
       </div>
     </footer>
