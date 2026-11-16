@@ -8,6 +8,12 @@ import {
 import TreatmentCard from '@/components/public/TreatmentCard';
 import HeroShowcase from '@/components/public/HeroShowcase';
 import {
+  FadeIn,
+  StaggerContainer,
+  StaggerItem,
+  HoverLift,
+} from '@/components/public/MotionPrimitives';
+import {
   ShieldCheck,
   Award,
   Sparkles,
@@ -33,7 +39,7 @@ export default async function HomePage() {
 
       {/* 2. Categories Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+        <FadeIn className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <span className="text-xs uppercase tracking-widest text-bronze-700 font-bold">
             Hizmet Alanlarımız
           </span>
@@ -44,39 +50,42 @@ export default async function HomePage() {
             Cilt sağlığınızı korumak ve iyileştirmek için modern dermatolojinin
             tüm olanakları bir arada.
           </p>
-        </div>
+        </FadeIn>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/kategori/${cat.slug}`}
-              className="group bg-white rounded-2xl p-6 border border-bronze-200/80 hover:border-bronze-500/70 hover:shadow-lg hover:shadow-bronze-900/5 transition-all duration-300 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-peach-50 text-bronze-700 flex items-center justify-center group-hover:bg-bronze-700 group-hover:text-white transition">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif font-bold text-lg text-espresso-900 group-hover:text-bronze-700 transition">
-                  {cat.title}
-                </h3>
-                <p className="text-xs text-espresso-800/75 leading-relaxed line-clamp-3">
-                  {cat.description}
-                </p>
-              </div>
+            <StaggerItem key={cat.id} className="h-full">
+              <HoverLift className="h-full">
+                <Link
+                  href={`/kategori/${cat.slug}`}
+                  className="group h-full bg-white rounded-2xl p-6 border border-bronze-200/80 hover:border-bronze-500/70 hover:shadow-xl hover:shadow-bronze-900/5 transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-xl bg-peach-50 text-bronze-700 flex items-center justify-center group-hover:bg-bronze-700 group-hover:text-white transition">
+                      <Sparkles className="w-6 h-6" />
+                    </div>
+                    <h3 className="font-serif font-bold text-lg text-espresso-900 group-hover:text-bronze-700 transition">
+                      {cat.title}
+                    </h3>
+                    <p className="text-xs text-espresso-800/75 leading-relaxed line-clamp-3">
+                      {cat.description}
+                    </p>
+                  </div>
 
-              <div className="mt-6 pt-4 border-t border-bronze-100 flex items-center justify-between text-xs font-semibold text-bronze-700">
-                <span>Tedavileri Gör</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
-              </div>
-            </Link>
+                  <div className="mt-6 pt-4 border-t border-bronze-100 flex items-center justify-between text-xs font-semibold text-bronze-700">
+                    <span>Tedavileri Gör</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
+                  </div>
+                </Link>
+              </HoverLift>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </section>
 
       {/* 3. Featured Treatments */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-10 gap-4">
+        <FadeIn className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-10 gap-4">
           <div>
             <span className="text-xs uppercase tracking-widest text-bronze-700 font-bold">
               Öne Çıkan Klinik Tedaviler
@@ -92,13 +101,17 @@ export default async function HomePage() {
             <span>Tüm Tedavileri İncele</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
-        </div>
+        </FadeIn>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {featuredTreatments.map((t) => (
-            <TreatmentCard key={t.id} treatment={t} />
+            <StaggerItem key={t.id} className="h-full">
+              <HoverLift className="h-full">
+                <TreatmentCard treatment={t} />
+              </HoverLift>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </section>
 
       {/* 4. Doctor Academic Profile Highlight (Logo Espresso Theme) */}

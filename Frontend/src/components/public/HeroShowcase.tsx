@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AnimatePresence, m } from 'motion/react';
 import { SiteSettings } from '@/types';
 import { trackConversionClick } from '@/hooks/use-utm-tracker';
 import { createWhatsAppUrl, resolveMediaUrl } from '@/utils/cn';
@@ -71,7 +72,12 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
           {/* LEFT COLUMN (Appears FIRST on mobile): Dynamic Doctor Portrait & Official Certificates */}
-          <div className="lg:col-span-5">
+          <m.div
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-5"
+          >
             <div className="relative mx-auto max-w-md lg:max-w-none">
               {/* Logo Bronze & Espresso Framed Showcase Card */}
               <div className="relative rounded-3xl p-2 bg-gradient-to-br from-bronze-400/50 via-bronze-600/30 to-espresso-800/40 shadow-2xl shadow-espresso-900/15">
@@ -100,7 +106,12 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
 
               {/* Bottom Corner Official Certificates Badge Card */}
               {certificates.length > 0 && (
-                <div className="mt-4 sm:mt-0 sm:absolute sm:-bottom-7 sm:-right-4 sm:left-4 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border-2 border-bronze-300/80 shadow-xl flex items-center justify-between gap-3">
+                <m.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.55, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                  className="mt-4 sm:mt-0 sm:absolute sm:-bottom-7 sm:-right-4 sm:left-4 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border-2 border-bronze-300/80 shadow-xl flex items-center justify-between gap-3"
+                >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-peach-50 border border-peach-200 text-bronze-700 flex items-center justify-center shrink-0">
                       <ShieldCheck className="w-5 h-5" />
@@ -117,9 +128,11 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
 
                   <div className="flex items-center gap-2 shrink-0">
                     {certificates.map((cert, idx) => (
-                      <button
+                      <m.button
                         key={idx}
                         type="button"
+                        whileHover={{ scale: 1.07, y: -2 }}
+                        whileTap={{ scale: 0.96 }}
                         onClick={() => setActiveCertificate(cert)}
                         title={cert.title}
                         className="group relative w-12 h-12 rounded-xl overflow-hidden border border-bronze-300 hover:border-bronze-700 shadow-sm transition"
@@ -133,16 +146,21 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
                         <div className="absolute inset-0 bg-espresso-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                           <ZoomIn className="w-4 h-4 text-white" />
                         </div>
-                      </button>
+                      </m.button>
                     ))}
                   </div>
-                </div>
+                </m.div>
               )}
             </div>
-          </div>
+          </m.div>
 
           {/* RIGHT COLUMN: Academic Authority & Fast Conversion Actions */}
-          <div className="lg:col-span-7 space-y-6 pt-2 lg:pt-0">
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-7 space-y-6 pt-2 lg:pt-0"
+          >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-peach-50 border border-peach-200 text-espresso-800 text-xs font-bold shadow-sm">
               <Award className="w-4 h-4 text-bronze-700 shrink-0" />
               <span>1995 Cerrahpaşa Tıp Mezuniyeti • 2015 Profesörlük Unvanı</span>
@@ -182,96 +200,110 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
 
             {/* Primary & Secondary Action Buttons */}
             <div className="pt-3 flex flex-col sm:flex-row gap-4">
-              <a
+              <m.a
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleWhatsAppClick}
-                className="inline-flex items-center justify-center gap-2.5 bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-4 rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/25 hover:shadow-xl transition-all"
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center justify-center gap-2.5 bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-4 rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/25 hover:shadow-xl transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
                 <span>WhatsApp ile Hemen Randevu Al</span>
-              </a>
+              </m.a>
 
-              <a
+              <m.a
                 href={`tel:${phone.replace(/\s+/g, '')}`}
                 onClick={handlePhoneClick}
-                className="inline-flex items-center justify-center gap-2.5 bg-white hover:bg-peach-50 text-espresso-900 border-2 border-bronze-400/70 hover:border-bronze-700 px-7 py-4 rounded-2xl text-sm font-bold shadow-sm transition-all"
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center justify-center gap-2.5 bg-white hover:bg-peach-50 text-espresso-900 border-2 border-bronze-400/70 hover:border-bronze-700 px-7 py-4 rounded-2xl text-sm font-bold shadow-sm transition-colors"
               >
                 <Phone className="w-4 h-4 text-bronze-700" />
                 <span>Kliniği Ara: {phone}</span>
-              </a>
+              </m.a>
             </div>
-          </div>
+          </m.div>
         </div>
       </div>
 
       {/* Fullscreen Lightbox Modal for Official Certificates */}
-      {activeCertificate && (
-        <div
-          onClick={() => setActiveCertificate(null)}
-          className="fixed inset-0 z-50 bg-espresso-950/85 backdrop-blur-sm flex items-center justify-center p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-bronze-300 flex flex-col"
+      <AnimatePresence>
+        {activeCertificate && (
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setActiveCertificate(null)}
+            className="fixed inset-0 z-50 bg-espresso-950/85 backdrop-blur-sm flex items-center justify-center p-4"
           >
-            <div className="px-6 py-4 bg-espresso-900 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-peach-200" />
-                <div>
-                  <h3 className="text-sm font-serif font-bold">
-                    {activeCertificate.title}
-                  </h3>
-                  <p className="text-[11px] text-peach-100/80">
-                    {activeCertificate.subtitle}
-                  </p>
+            <m.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-bronze-300 flex flex-col"
+            >
+              <div className="px-6 py-4 bg-espresso-900 text-white flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-peach-200" />
+                  <div>
+                    <h3 className="text-sm font-serif font-bold">
+                      {activeCertificate.title}
+                    </h3>
+                    <p className="text-[11px] text-peach-100/80">
+                      {activeCertificate.subtitle}
+                    </p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveCertificate(null)}
+                  className="p-1.5 rounded-lg text-peach-100 hover:text-white hover:bg-espresso-800 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setActiveCertificate(null)}
-                className="p-1.5 rounded-lg text-peach-100 hover:text-white hover:bg-espresso-800 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="p-4 sm:p-6 bg-clinic-canvas flex-1 overflow-y-auto flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={activeCertificate.url}
-                alt={activeCertificate.title}
-                className="max-h-[68vh] w-auto object-contain rounded-xl shadow-md"
-              />
-            </div>
+              <div className="p-4 sm:p-6 bg-clinic-canvas flex-1 overflow-y-auto flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={activeCertificate.url}
+                  alt={activeCertificate.title}
+                  className="max-h-[68vh] w-auto object-contain rounded-xl shadow-md"
+                />
+              </div>
 
-            {certificates.length > 1 && (
-              <div className="px-6 py-3 bg-white border-t border-bronze-200 flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-espresso-800">
-                  Resmi Yetki Belgelerimiz:
-                </span>
-                <div className="flex items-center gap-2">
-                  {certificates.map((c, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setActiveCertificate(c)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                        activeCertificate.url === c.url
-                          ? 'bg-bronze-700 text-white'
-                          : 'bg-peach-50 text-espresso-800 hover:bg-peach-100'
-                      }`}
-                    >
-                      {c.title}
-                    </button>
-                  ))}
+              {certificates.length > 1 && (
+                <div className="px-6 py-3 bg-white border-t border-bronze-200 flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-espresso-800">
+                    Resmi Yetki Belgelerimiz:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {certificates.map((c, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setActiveCertificate(c)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                          activeCertificate.url === c.url
+                            ? 'bg-bronze-700 text-white'
+                            : 'bg-peach-50 text-espresso-800 hover:bg-peach-100'
+                        }`}
+                      >
+                        {c.title}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+              )}
+            </m.div>
+          </m.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

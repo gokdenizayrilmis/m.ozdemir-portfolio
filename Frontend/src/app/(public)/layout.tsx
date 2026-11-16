@@ -3,6 +3,7 @@ import Footer from '@/components/public/Footer';
 import StickyMobileBar from '@/components/public/StickyMobileBar';
 import JsonLdSchema from '@/components/public/JsonLdSchema';
 import UtmInitializer from '@/components/public/UtmInitializer';
+import MotionProvider from '@/components/public/MotionProvider';
 import { categoryService, settingsService, treatmentService } from '@/services';
 
 export default async function PublicLayout({
@@ -20,7 +21,7 @@ export default async function PublicLayout({
   const whatsappNumber = settings?.whatsAppNumber || '905522656436';
 
   return (
-    <>
+    <MotionProvider>
       <UtmInitializer />
       <JsonLdSchema type="Clinic" settings={settings} />
       <Header
@@ -31,7 +32,7 @@ export default async function PublicLayout({
       <main className="flex-grow">{children}</main>
       <Footer categories={categories} settings={settings} />
       <StickyMobileBar phone={phone} whatsappNumber={whatsappNumber} />
-    </>
+    </MotionProvider>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { AnimatePresence, m } from 'motion/react';
 import { Category, SiteSettings, Treatment } from '@/types';
 import { Phone, MessageCircle, Menu, X, ChevronDown, ArrowRight } from 'lucide-react';
 import { trackConversionClick } from '@/hooks/use-utm-tracker';
@@ -152,55 +153,61 @@ export default function Header({ categories, treatments, settings }: HeaderProps
                   />
                 </Link>
 
-                {isOpen && (
-                  <div
-                    className={`absolute top-full left-0 bg-white rounded-2xl shadow-2xl border border-bronze-200/90 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150 ${
-                      isMultiColumn ? 'w-[520px]' : 'w-72'
-                    }`}
-                  >
-                    <div className="px-3 py-2 mb-1.5 border-b border-bronze-100 flex items-center justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-bronze-700">
-                        {branch.fullTitle}
-                      </span>
-                      <Link
-                        href={`/kategori/${branch.slug}`}
-                        onClick={() => setOpenBranchSlug(null)}
-                        className="text-[11px] font-semibold text-espresso-700 hover:text-bronze-700 inline-flex items-center gap-1"
-                      >
-                        <span>Tümünü Gör</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </Link>
-                    </div>
-
-                    {branch.treatments.length > 0 ? (
-                      <div
-                        className={`grid gap-1 ${
-                          isMultiColumn ? 'grid-cols-2' : 'grid-cols-1'
-                        }`}
-                      >
-                        {branch.treatments.map((t) => (
-                          <Link
-                            key={t.id}
-                            href={`/${t.slug}`}
-                            onClick={() => setOpenBranchSlug(null)}
-                            className="px-3 py-2 rounded-xl text-xs font-medium text-espresso-800 hover:bg-peach-50 hover:text-bronze-800 transition flex items-center justify-between group/item"
-                          >
-                            <span className="truncate">{t.title}</span>
-                            <ArrowRight className="w-3 h-3 text-bronze-600 opacity-0 group-hover/item:opacity-100 transition shrink-0 ml-2" />
-                          </Link>
-                        ))}
+                <AnimatePresence>
+                  {isOpen && (
+                    <m.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                      className={`absolute top-full left-0 bg-white rounded-2xl shadow-2xl border border-bronze-200/90 p-3 z-50 ${
+                        isMultiColumn ? 'w-[520px]' : 'w-72'
+                      }`}
+                    >
+                      <div className="px-3 py-2 mb-1.5 border-b border-bronze-100 flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-bronze-700">
+                          {branch.fullTitle}
+                        </span>
+                        <Link
+                          href={`/kategori/${branch.slug}`}
+                          onClick={() => setOpenBranchSlug(null)}
+                          className="text-[11px] font-semibold text-espresso-700 hover:text-bronze-700 inline-flex items-center gap-1"
+                        >
+                          <span>Tümünü Gör</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </Link>
                       </div>
-                    ) : (
-                      <Link
-                        href={`/kategori/${branch.slug}`}
-                        onClick={() => setOpenBranchSlug(null)}
-                        className="block px-3 py-2 text-xs text-espresso-700 hover:text-bronze-800"
-                      >
-                        {branch.label} tedavilerini inceleyin →
-                      </Link>
-                    )}
-                  </div>
-                )}
+
+                      {branch.treatments.length > 0 ? (
+                        <div
+                          className={`grid gap-1 ${
+                            isMultiColumn ? 'grid-cols-2' : 'grid-cols-1'
+                          }`}
+                        >
+                          {branch.treatments.map((t) => (
+                            <Link
+                              key={t.id}
+                              href={`/${t.slug}`}
+                              onClick={() => setOpenBranchSlug(null)}
+                              className="px-3 py-2 rounded-xl text-xs font-medium text-espresso-800 hover:bg-peach-50 hover:text-bronze-800 transition flex items-center justify-between group/item"
+                            >
+                              <span className="truncate">{t.title}</span>
+                              <ArrowRight className="w-3 h-3 text-bronze-600 opacity-0 group-hover/item:opacity-100 transition shrink-0 ml-2" />
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <Link
+                          href={`/kategori/${branch.slug}`}
+                          onClick={() => setOpenBranchSlug(null)}
+                          className="block px-3 py-2 text-xs text-espresso-700 hover:text-bronze-800"
+                        >
+                          {branch.label} tedavilerini inceleyin →
+                        </Link>
+                      )}
+                    </m.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}

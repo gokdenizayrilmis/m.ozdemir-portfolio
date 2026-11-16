@@ -11,7 +11,7 @@ export default function TreatmentCard({ treatment }: TreatmentCardProps) {
   const imageUrl = resolveMediaUrl(treatment.coverImageUrl);
 
   return (
-    <article className="group relative bg-white rounded-2xl overflow-hidden border border-bronze-200/80 hover:border-bronze-500/70 hover:shadow-xl hover:shadow-bronze-900/5 transition-all duration-300 flex flex-col justify-between">
+    <article className="group relative h-full bg-white rounded-2xl overflow-hidden border border-bronze-200/80 hover:border-bronze-500/70 hover:shadow-xl hover:shadow-bronze-900/5 transition-all duration-300 flex flex-col justify-between">
       <div>
         {imageUrl && (
           <Link
