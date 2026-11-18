@@ -33,7 +33,7 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
           <img
             src={heroBgUrl}
             alt={settings?.doctorName || 'Prof. Dr. Mustafa Özdemir Kliniği'}
-            className="w-full h-full object-cover object-[72%_top] md:object-center"
+            className="w-full h-full object-cover object-[72%_top] origin-[72%_0%] scale-[1.35] -translate-y-24 md:object-center md:origin-center md:scale-100 md:translate-y-0"
           />
           {/* Top subtle gradient so transparent navbar links and logo stay legible */}
           <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#120F0D]/55 to-transparent" />
@@ -54,9 +54,11 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
         >
           {/* Main Two-Tone Editorial Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-sans font-extrabold tracking-tight leading-[1.12]">
-            <span className="block text-white">Cildinize Değer Verin</span>
+            <span className="block text-white">Cildinize <br className="sm:hidden" /> Değer Verin</span>
             <span className="block text-bronze-400 mt-1.5">
-              Sağlıklı ve Pürüzsüz Bir Cilt Hayal Değil
+              Sağlıklı ve Pürüzsüz <br className="sm:hidden" />
+              Bir 
+              Cilt Hayal Değil
             </span>
           </h1>
 
