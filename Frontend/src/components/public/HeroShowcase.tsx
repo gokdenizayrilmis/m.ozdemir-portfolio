@@ -3,15 +3,16 @@
 import { m } from 'motion/react';
 import { SiteSettings } from '@/types';
 import { trackConversionClick } from '@/hooks/use-utm-tracker';
-import { resolveMediaUrl } from '@/utils/cn';
-import { Phone } from 'lucide-react';
+import { createWhatsAppUrl, resolveMediaUrl } from '@/utils/cn';
+import { MessageCircle } from 'lucide-react';
 
 interface HeroShowcaseProps {
   settings: SiteSettings | null;
 }
 
 export default function HeroShowcase({ settings }: HeroShowcaseProps) {
-  const phone = settings?.phoneNumbers?.[0] || '+90 552 265 64 36';
+  const whatsappNumber = settings?.whatsAppNumber || '905522656436';
+  const waUrl = createWhatsAppUrl(whatsappNumber);
 
   // Full-bleed clinic reception photo with Prof. Dr. Mustafa Özdemir on the right
   const heroBgUrl = resolveMediaUrl(
@@ -19,12 +20,12 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
     '/uploads/corporate/hero-showroom.jpg'
   );
 
-  const handlePhoneClick = () => {
-    trackConversionClick('PhoneClick', '/');
+  const handleWhatsAppClick = () => {
+    trackConversionClick('WhatsAppClick', '/');
   };
 
   return (
-    <section className="relative h-screen min-h-[680px] flex items-end lg:items-center overflow-hidden bg-espresso-950 pt-20 lg:pt-24 pb-14 lg:pb-16">
+    <section className="relative h-screen min-h-[680px] flex flex-col justify-end pb-24 md:justify-center md:pb-0 md:pt-20 overflow-hidden bg-espresso-950">
       {/* Background Photo */}
       {heroBgUrl && (
         <div className="absolute inset-0 z-0">
@@ -32,87 +33,67 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
           <img
             src={heroBgUrl}
             alt={settings?.doctorName || 'Prof. Dr. Mustafa Özdemir Kliniği'}
-            className="w-full h-full object-cover object-[72%_20%] lg:object-[center_18%] brightness-[0.82]"
+            className="w-full h-full object-cover object-[72%_top] md:object-center"
           />
-          {/* Top subtle gradient so transparent navbar links and logo pop clearly */}
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#120c09]/70 to-transparent" />
-          {/* Desktop Gradient: Rich dark left-to-right overlay */}
-          <div className="hidden lg:block absolute inset-0 bg-[linear-gradient(90deg,rgba(18,12,9,0.92)_0%,rgba(18,12,9,0.76)_42%,rgba(18,12,9,0.38)_72%,rgba(18,12,9,0.25)_100%)]" />
-          {/* Mobile Gradient */}
-          <div className="lg:hidden absolute inset-0 bg-gradient-to-t from-[#120c09]/95 via-[#120c09]/75 to-[#120c09]/35" />
+          {/* Top subtle gradient so transparent navbar links and logo stay legible */}
+          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#120F0D]/55 to-transparent" />
+          {/* Desktop Gradient: Left-to-right so text is crisp and doctor portrait stays bright */}
+          <div className="hidden md:block absolute inset-0 md:bg-gradient-to-r md:from-[#120F0D]/95 md:via-[#120F0D]/65 md:to-transparent" />
+          {/* Mobile Gradient: Bottom-to-top so doctor's face in upper half stays clear */}
+          <div className="md:hidden absolute inset-0 bg-gradient-to-t from-[#120F0D] via-[#120F0D]/80 via-45% to-transparent" />
         </div>
       )}
 
-      {/* Foreground Content (Left Side on Desktop) */}
+      {/* Foreground Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 w-full">
         <m.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-xl lg:max-w-2xl space-y-5 sm:space-y-6"
+          className="max-w-xl lg:max-w-2xl space-y-4 sm:space-y-5"
         >
           {/* Main Two-Tone Editorial Headline */}
-          <h1 className="text-3xl sm:text-5xl lg:text-[56px] font-sans font-extrabold tracking-tight leading-[1.12]">
-            <span className="block text-white">Cildinize Değer</span>
-            <span className="block text-white">Verin...</span>
-            <span className="block text-bronze-400 mt-1">
-              Sağlıklı ve Pürüzsüz
-            </span>
-            <span className="block text-bronze-400">
-              Bir Cilt Hayal Değil!
+          <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-sans font-extrabold tracking-tight leading-[1.12]">
+            <span className="block text-white">Cildinize Değer Verin</span>
+            <span className="block text-bronze-400 mt-1.5">
+              Sağlıklı ve Pürüzsüz Bir Cilt Hayal Değil
             </span>
           </h1>
 
           {/* Welcoming Subtitle */}
-          <p className="text-sm sm:text-base lg:text-lg text-peach-100/90 leading-relaxed max-w-xl font-normal">
+          <p className="text-sm md:text-base text-peach-100/90 leading-relaxed max-w-xl font-normal">
             En etkili ve güvenli dermatolojik tedavi yöntemleri, ileri lazer
             teknolojileri ve 30 yılı aşkın akademik tıp deneyimimiz ile
-            İstanbul Ataköy kliniğimizde sizleri bekliyoruz...
+            İstanbul Ataköy kliniğimizde sizleri bekliyoruz.
           </p>
 
           {/* Doctor Signature Style Line */}
-          <p className="font-serif italic text-2xl sm:text-3xl text-peach-200/90 tracking-wide pt-1">
+          <p className="font-serif italic text-xl sm:text-3xl text-peach-200/90 tracking-wide pt-0.5">
             {settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
           </p>
 
-          {/* Pill Action Buttons (Matching Reference Site) */}
+          {/* Clean 2-Button CTA */}
           <div className="pt-2 flex flex-wrap items-center gap-3.5">
+            <m.a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleWhatsAppClick}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="hidden sm:inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#B8864B] hover:bg-[#a6763f] text-white text-xs sm:text-sm font-semibold shadow-lg shadow-black/25 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>WhatsApp ile Randevu Al</span>
+            </m.a>
+
             <m.a
               href="#uzmanlik-alanlari"
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-bronze-600 hover:bg-bronze-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-black/25 transition-colors"
+              className="inline-flex items-center justify-center px-7 py-3.5 rounded-full border border-white/30 bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold backdrop-blur-sm transition-colors"
             >
-              Uzmanlık Alanları
-            </m.a>
-
-            <m.a
-              href="#hakkimda"
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-white/5 hover:bg-white/15 text-white border border-bronze-400/70 hover:border-bronze-300 text-xs sm:text-sm font-semibold backdrop-blur-sm transition-colors"
-            >
-              Hakkımda
-            </m.a>
-
-            <m.a
-              href="#iletisim"
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-white/5 hover:bg-white/15 text-white border border-bronze-400/70 hover:border-bronze-300 text-xs sm:text-sm font-semibold backdrop-blur-sm transition-colors"
-            >
-              İletişim
-            </m.a>
-
-            <m.a
-              href={`tel:${phone.replace(/\s+/g, '')}`}
-              onClick={handlePhoneClick}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex sm:hidden items-center justify-center gap-2 px-5 py-3.5 rounded-full bg-white/10 text-white border border-white/20 text-xs font-semibold"
-            >
-              <Phone className="w-3.5 h-3.5 text-bronze-400" />
-              <span>Hemen Ara</span>
+              Tedavi &amp; Uzmanlık Alanlarımız ↓
             </m.a>
           </div>
         </m.div>
