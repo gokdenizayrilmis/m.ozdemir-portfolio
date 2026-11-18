@@ -25,11 +25,12 @@ export default function ContactSection({ settings }: ContactSectionProps) {
       id="iletisim"
       className="scroll-mt-28 max-w-7xl mx-auto px-4 sm:px-6 space-y-10"
     >
-      <FadeIn className="max-w-2xl space-y-2">
-        <span className="text-xs uppercase tracking-widest text-bronze-700 font-bold">
-          Bize Ulaşın
-        </span>
-        <h2 className="text-2xl sm:text-4xl font-serif font-bold text-espresso-900">
+      <FadeIn className="max-w-2xl space-y-3">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-peach-50 border border-peach-200 text-espresso-800 text-xs font-bold shadow-sm">
+          <MapPin className="w-3.5 h-3.5 text-bronze-700 shrink-0" />
+          <span>Bize Ulaşın</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-sans font-extrabold tracking-tight text-espresso-900">
           İletişim &amp; Konum
         </h2>
         <p className="text-sm text-espresso-800/75 leading-relaxed">
@@ -123,7 +124,7 @@ export default function ContactSection({ settings }: ContactSectionProps) {
                 <Info className="w-4 h-4 text-bronze-700 shrink-0 mt-0.5" />
                 <p className="text-xs text-espresso-800/80 leading-relaxed">
                   Randevu ve bilgi talepleriniz için bize dilediğiniz zaman ulaşabilirsiniz. 
-                  Ekibimiz, mesai saatleri içerisinde en kısa sürede sizinle iletişime geçecektir
+                  Ekibimiz, mesai saatleri içerisinde en kısa sürede sizinle iletişime geçecektir.
                 </p>
               </div>
             </div>
@@ -154,7 +155,7 @@ export default function ContactSection({ settings }: ContactSectionProps) {
         <div className="lg:col-span-7">
           <div className="h-full bg-white rounded-3xl p-4 sm:p-6 border border-bronze-200/80 shadow-sm flex flex-col">
             <div className="flex items-center justify-between gap-2 mb-4 px-1">
-              <h3 className="font-serif font-bold text-espresso-900 text-lg">
+              <h3 className="font-sans font-bold text-espresso-900 text-lg tracking-tight">
                 Haritada Kliniğimiz
               </h3>
               <span className="text-xs font-semibold text-bronze-700 bg-peach-50 border border-peach-200/70 px-3 py-1 rounded-full">
