@@ -103,7 +103,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
         }`}
       >
         {/* Main Navbar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 lg:h-[84px] flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 lg:h-[90px] flex items-center justify-between gap-4">
           {/* Left: Clickable Logo Emblem Only (Completely Transparent Background) */}
           <Link
             href="/"
@@ -111,14 +111,15 @@ export default function Header({ categories, treatments, settings }: HeaderProps
             aria-label={
               settings?.doctorName || 'Prof. Dr. Mustafa Özdemir Ana Sayfa'
             }
-            className="flex items-center shrink-0 py-1.5 rounded-xl transition-all duration-300 hover:opacity-90 focus:outline-none"
+            className="flex items-center shrink-0 rounded-xl transition-all duration-300 hover:opacity-90 focus:outline-none overflow-visible"
           >
             {logoSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoSrc}
                 alt={settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
-                className={`h-10 sm:h-11 lg:h-12 w-auto max-w-[200px] sm:max-w-[240px] lg:max-w-[260px] object-contain transition-all duration-300 ${
+                style={{ height: '125px', width: 'auto', maxWidth: 'none' }}
+                className={`-my-6 object-contain object-left transition-all duration-300 ${
                   isTransparent
                     ? 'brightness-125 contrast-110 drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)]'
                     : ''
