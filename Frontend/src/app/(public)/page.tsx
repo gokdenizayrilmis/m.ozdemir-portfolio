@@ -6,6 +6,7 @@ import {
 import HeroShowcase from '@/components/public/HeroShowcase';
 import TreatmentsShowcase from '@/components/public/TreatmentsShowcase';
 import DoctorAboutSection from '@/components/public/DoctorAboutSection';
+import ClinicHighlightsSection from '@/components/public/ClinicHighlightsSection';
 import HealthTourismSection from '@/components/public/HealthTourismSection';
 import ContactSection from '@/components/public/ContactSection';
 
@@ -27,10 +28,13 @@ export default async function HomePage() {
       {/* 3. Hakkımda Alanı — Akademik Kariyer & Uzmanlık */}
       <DoctorAboutSection settings={settings} />
 
-      {/* 4. Uluslararası Sağlık Turizmi — Yetki Belgesi & Health Türkiye Profili */}
+      {/* 4. Klinik Süreç & Tanışma Alanı — 6 Madde + Merkez Görsel */}
+      <ClinicHighlightsSection settings={settings} />
+
+      {/* 5. Uluslararası Sağlık Turizmi — Yetki Belgesi & Health Türkiye Profili */}
       <HealthTourismSection settings={settings} />
 
-      {/* 5. İletişim & Konum — Adres, Bilgiler ve Klinik Haritası */}
+      {/* 6. İletişim & Konum — Adres, Bilgiler ve Klinik Haritası */}
       <ContactSection settings={settings} />
     </div>
   );

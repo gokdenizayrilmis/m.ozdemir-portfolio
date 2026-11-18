@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, m } from 'motion/react';
 import { Category, SiteSettings, Treatment } from '@/types';
-import { Phone, MessageCircle, Menu, X, ChevronDown, ArrowRight } from 'lucide-react';
+import { Phone, Menu, X, ChevronDown, ArrowRight } from 'lucide-react';
+import ContactActionButtons from '@/components/public/ContactActionButtons';
 import { trackConversionClick } from '@/hooks/use-utm-tracker';
-import { createWhatsAppUrl, resolveMediaUrl } from '@/utils/cn';
+import { resolveMediaUrl } from '@/utils/cn';
 
 interface HeaderProps {
   categories: Category[];
@@ -45,7 +46,6 @@ export default function Header({ categories, treatments, settings }: HeaderProps
 
   const phone = settings?.phoneNumbers?.[0] || '+90 552 265 64 36';
   const whatsappNumber = settings?.whatsAppNumber || '905522656436';
-  const waUrl = createWhatsAppUrl(whatsappNumber);
   const logoSrc = resolveMediaUrl(
     settings?.logoUrl,
     '/uploads/corporate/logo.png'
@@ -53,10 +53,6 @@ export default function Header({ categories, treatments, settings }: HeaderProps
 
   const handlePhoneClick = () => {
     trackConversionClick('PhoneClick', window.location.pathname);
-  };
-
-  const handleWhatsAppClick = () => {
-    trackConversionClick('WhatsAppClick', window.location.pathname);
   };
 
   const handleHomeSectionClick = (
@@ -390,26 +386,12 @@ export default function Header({ categories, treatments, settings }: HeaderProps
               İletişim
             </Link>
 
-            <div className="pt-3 flex flex-col gap-2.5">
-              <a
-                href={`tel:${phone.replace(/\s+/g, '')}`}
-                onClick={handlePhoneClick}
-                className="flex items-center justify-center gap-2 bg-espresso-900 text-white py-3 rounded-xl text-xs font-bold"
-              >
-                <Phone className="w-4 h-4 text-bronze-400" />
-                <span>Kliniği Ara: {phone}</span>
-              </a>
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleWhatsAppClick}
-                className="flex items-center justify-center gap-2 bg-emerald-600 text-white py-3 rounded-xl text-xs font-bold"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>WhatsApp Randevu</span>
-              </a>
-            </div>
+            <ContactActionButtons
+              phone={phone}
+              whatsappNumber={whatsappNumber}
+              layout="stack"
+              className="pt-3"
+            />
           </div>
         )}
       </header>

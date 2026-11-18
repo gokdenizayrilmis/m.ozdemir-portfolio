@@ -65,7 +65,7 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
           {/* Welcoming Subtitle */}
           <p className="text-sm md:text-base text-peach-100/90 leading-relaxed max-w-xl font-normal">
             En etkili ve güvenli dermatolojik tedavi yöntemleri, ileri lazer
-            teknolojileri ve 30 yılı aşkın akademik tıp deneyimimiz ile
+            teknolojileri ve <strong style={{ fontWeight: 'bold' }}>30 yılı aşkın</strong> akademik tıp deneyimimiz ile
             İstanbul Ataköy kliniğimizde sizleri bekliyoruz.
           </p>
 

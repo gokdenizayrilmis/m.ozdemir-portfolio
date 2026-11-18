@@ -1,7 +1,7 @@
 import { SiteSettings } from '@/types';
+import ContactActionButtons from '@/components/public/ContactActionButtons';
 import { FadeIn } from '@/components/public/MotionPrimitives';
-import { Phone, Mail, MapPin, Clock, MessageCircle, Info } from 'lucide-react';
-import { createWhatsAppUrl } from '@/utils/cn';
+import { Phone, Mail, MapPin, Clock, Info } from 'lucide-react';
 
 interface ContactSectionProps {
   settings: SiteSettings | null;
@@ -15,7 +15,6 @@ export default function ContactSection({ settings }: ContactSectionProps) {
     settings?.address ||
     'Ataköy 7-8-9-10. Kısım Mah. Çobançeşme E-5 Yanyol Cad. Ataköy Towers B-Blok No:146, 34158 Bakırköy/İstanbul';
   const whatsappNumber = settings?.whatsAppNumber || '905522656436';
-  const waUrl = createWhatsAppUrl(whatsappNumber);
   const mapEmbedUrl =
     settings?.googleMapsEmbedUrl ||
     'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3011.660602418987!2d28.8315!3d40.9895!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDU5JzIyLjIiTiAyOMKwNDknNTMuNCJF!5e0!3m2!1str!2str!4v1700000000000!5m2!1str!2str';
@@ -130,23 +129,12 @@ export default function ContactSection({ settings }: ContactSectionProps) {
             </div>
 
             {/* Quick Action Buttons */}
-            <div className="pt-4 border-t border-bronze-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <a
-                href={`tel:${phone.replace(/\s+/g, '')}`}
-                className="flex items-center justify-center gap-2 bg-espresso-900 hover:bg-espresso-800 text-white py-3 px-4 rounded-xl text-xs font-bold transition shadow-sm"
-              >
-                <Phone className="w-4 h-4 text-bronze-400" />
-                <span>Hemen Ara</span>
-              </a>
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-xl text-xs font-bold transition shadow-sm"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>WhatsApp Randevu</span>
-              </a>
+            <div className="pt-4 border-t border-bronze-100">
+              <ContactActionButtons
+                phone={phone}
+                whatsappNumber={whatsappNumber}
+                layout="grid"
+              />
             </div>
           </div>
         </div>
