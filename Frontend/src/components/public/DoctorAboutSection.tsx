@@ -75,12 +75,19 @@ export default function DoctorAboutSection({
   return (
     <section
       id="hakkimda"
-      className="scroll-mt-24 bg-gradient-to-b from-white via-clinic-canvas to-peach-100/40 py-16 sm:py-24 border-y border-bronze-200/70"
+      className="scroll-mt-24 bg-gradient-to-b from-white via-clinic-canvas to-peach-100/40 py-10 sm:py-14 border-y border-bronze-200/70"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-14">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-          {/* LEFT COLUMN: Doctor Clinical Portrait */}
-          <div className="lg:col-span-5 lg:mt-[46px]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          {/* LEFT COLUMN: Badge + Doctor Clinical Portrait */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-peach-50 border border-peach-200 text-espresso-800 text-xs font-bold shadow-sm">
+              <Award className="w-4 h-4 text-bronze-700 shrink-0" />
+              <span>
+                Hakkımda • 1995 Cerrahpaşa Tıp Mezuniyeti • 2015 Profesörlük Unvanı
+              </span>
+            </div>
+
             {/* Doctor Portrait (Clickable to Zoom) */}
             {portraitUrl && (
               <button
@@ -106,22 +113,10 @@ export default function DoctorAboutSection({
           </div>
 
           {/* RIGHT COLUMN: Academic Biography & Expertise */}
-          <div className="lg:col-span-7 space-y-5">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-peach-50 border border-peach-200 text-espresso-800 text-xs font-bold shadow-sm">
-              <Award className="w-4 h-4 text-bronze-700 shrink-0" />
-              <span>
-                Hakkımda • 1995 Cerrahpaşa Tıp Mezuniyeti • 2015 Profesörlük Unvanı
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-espresso-900 tracking-tight leading-[1.12]">
-                {settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
-              </h2>
-              <p className="text-lg sm:text-xl font-serif font-semibold text-bronze-700 leading-snug">
-                Dermatoloji (Deri ve Zührevi Hastalıkları) &amp; Lazer Uzmanı
-              </p>
-            </div>
+          <div className="lg:col-span-7 space-y-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-espresso-900 tracking-tight leading-[1.12]">
+              {settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+            </h2>
 
             {/* Full 5-Paragraph Doctor Biography */}
             {hasCustomLongBio ? (
