@@ -4,14 +4,7 @@ import { useState } from 'react';
 import { AnimatePresence, m } from 'motion/react';
 import { SiteSettings } from '@/types';
 import { resolveMediaUrl } from '@/utils/cn';
-import {
-  Award,
-  MapPin,
-  ShieldCheck,
-  Sparkles,
-  X,
-  ZoomIn,
-} from 'lucide-react';
+import { Award, ShieldCheck, X, ZoomIn } from 'lucide-react';
 
 interface DoctorAboutSectionProps {
   settings: SiteSettings | null;
@@ -30,6 +23,33 @@ const DEFAULT_BIO_PARAGRAPHS = [
   'İstanbul’da özel bir hastanede 4 yıl dermatoloji uzmanı olarak çalıştıktan sonra 2005-2010 yıllarında Selçuk Üniversitesi Meram Tıp Fakültesi ve Selçuklu Tıp Fakültesi Dermatoloji Anabilim Dalı’nda Yardımcı Doçent olarak çalıştı. 2010 yılında Doçentlik unvanını kazandı. 2010-2012 yılları arasında Bezmialem Üniversitesi Tıp Fakültesi’nde çalıştı. 2012 tarihinde İstanbul Medipol Üniversitesi, Tıp Fakültesi, Deri ve Zührevi Hastalıklar AD, Kürsü Başkanı olarak atandı.',
   'Ağustos 2015 yılında Profesör oldu. Dermatoloji alanında ilgi alanları; Vitiligo, Behçet hastalığı, saç hastalıkları, alerjik deri hastalıkları, psoriasis, biyolojik tedaviler ve akne hastalığıdır. Kozmetik dermatoloji alanında botulinum toksini uygulamaları, dolgu maddeleri uygulamaları, lazerler, yüz ve cilt gençleştirme sistemleri, ip ile yüz germe, lipoliz ve mezoterapi ile ilgilenmektedir.',
   'Ulusal/uluslararası düzeyde birçok kongrede sunumlar yapmış ve makaleler yayınlamıştır. Editörlüğünü yapmış olduğu “Psoriasis güncel yaklaşımlar” ve “Dermatolojide klinik metrik ölçümler ve sınıflama kriterleri” adlı iki kitabı vardır. Ayrıca birçok kitapta bölüm yazarlığı yapmıştır. Birçok tıbbi derneğe üyeliği vardır ve iyi derecede İngilizce bilmektedir.',
+];
+
+const CLINIC_STATS = [
+  {
+    value: '30+',
+    title: 'Yıllık Mesleki Tecrübe',
+    description:
+      '1995 Cerrahpaşa Tıp Fakültesi mezuniyetiyle başlayan; deri ve zührevi hastalıklar, lazer ve kozmetik dermatolojide 30 yılı aşkın akademik ve klinik deneyim.',
+  },
+  {
+    value: '40+',
+    title: 'Uzmanlık Alanı',
+    description:
+      'Klinik dermatoloji, ileri lazer tedavileri, dermatoskopik ben taraması, HPV tedavisi, saç hastalıkları ve medikal estetik uygulamalarında üst düzey birikim.',
+  },
+  {
+    value: '%100',
+    title: 'Kişiye Özel Tedavi',
+    description:
+      'Her danışanın cilt yapısı ve tıbbi ihtiyaçları farklıdır; tüm dermatolojik ve lazer uygulamalarımız tamamen size özel planlanır.'
+  },
+  {
+    value: '10.000+',
+    title: 'Mutlu Hasta',
+    description:
+      'Prof. Dr. Mustafa Özdemir ile kanıta dayalı tıbbi protokoller eşliğinde sağlıklı, estetik ve genç bir cilde kavuşan binlerce mutlu danışan.',
+  }  
 ];
 
 export default function DoctorAboutSection({
@@ -119,51 +139,25 @@ export default function DoctorAboutSection({
           </div>
         </div>
 
-        {/* Academic Expertise 4-Card Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-4 border-t border-bronze-200/70">
-          <div className="p-6 bg-espresso-900 text-white rounded-2xl border border-bronze-700/50 space-y-2 shadow-md">
-            <ShieldCheck className="w-7 h-7 text-peach-200" />
-            <h4 className="font-semibold text-white text-base">
-              Dermatoskopik Ben Taraması
-            </h4>
-            <p className="text-xs text-peach-100/75 leading-relaxed">
-              Deri kanserlerinin ve melanomun erken teşhisi için ileri
-              dermatoskopi cihazlarıyla haritalama.
-            </p>
-          </div>
-
-          <div className="p-6 bg-espresso-900 text-white rounded-2xl border border-bronze-700/50 space-y-2 shadow-md">
-            <Sparkles className="w-7 h-7 text-peach-200" />
-            <h4 className="font-semibold text-white text-base">
-              İleri Leke ve Lazer Protokolleri
-            </h4>
-            <p className="text-xs text-peach-100/75 leading-relaxed">
-              Güneş lekesi, melazma ve dövme silmede çevre dokuya hasar vermeyen
-              hedefli lazer atımları.
-            </p>
-          </div>
-
-          <div className="p-6 bg-espresso-900 text-white rounded-2xl border border-bronze-700/50 space-y-2 shadow-md">
-            <Award className="w-7 h-7 text-peach-200" />
-            <h4 className="font-semibold text-white text-base">
-              HPV &amp; Genital Siğil Tedavisi
-            </h4>
-            <p className="text-xs text-peach-100/75 leading-relaxed">
-              Hasta mahremiyetine tam saygılı kriyoterapi, koterizasyon ve lazer
-              ablasyon çözümleri.
-            </p>
-          </div>
-
-          <div className="p-6 bg-espresso-900 text-white rounded-2xl border border-bronze-700/50 space-y-2 shadow-md">
-            <MapPin className="w-7 h-7 text-peach-200" />
-            <h4 className="font-semibold text-white text-base">
-              Merkezi Konum (Ataköy Towers)
-            </h4>
-            <p className="text-xs text-peach-100/75 leading-relaxed">
-              E-5 Yanyol üzerinde, metrobüs ve metroya yürüme mesafesinde, kolay
-              otopark imkanı.
-            </p>
-          </div>
+        {/* Light Luxury Medical UI — 4-Card Trust & Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-6 border-t border-bronze-200/70">
+          {CLINIC_STATS.map((stat) => (
+            <div
+              key={stat.title}
+              className="bg-white rounded-2xl border border-stone-100 p-8 sm:p-9 text-center flex flex-col items-center shadow-[0_10px_40px_-15px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_50px_-12px_rgba(180,131,91,0.18)] hover:-translate-y-1 transition-all duration-300"
+            >
+              <span className="text-4xl md:text-5xl font-bold text-[#B8860B] tracking-tight">
+                {stat.value}
+              </span>
+              <div className="w-8 h-0.5 bg-amber-600/60 my-4" />
+              <h4 className="text-lg font-bold text-slate-900 mb-3">
+                {stat.title}
+              </h4>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                {stat.description}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
