@@ -6,7 +6,6 @@ import { SiteSettings } from '@/types';
 import { resolveMediaUrl } from '@/utils/cn';
 import {
   Award,
-  ExternalLink,
   MapPin,
   ShieldCheck,
   Sparkles,
@@ -23,11 +22,7 @@ interface LightboxItem {
   title: string;
   subtitle: string;
   url: string;
-  externalUrl?: string;
 }
-
-const HEALTH_TURKIYE_URL =
-  'https://www.healthturkiye.gov.tr/hospital/prof.-dr.-mustafa-ozdemir-muayenehanesi';
 
 const DEFAULT_BIO_PARAGRAPHS = [
   '11 Haziran 1970 tarihinde Yozgat’ta doğdu. İlk, orta ve lise öğrenimini Yozgat ve Kayseri’de tamamladı. 1995 yılında İstanbul Üniversitesi, Cerrahpaşa Tıp Fakültesi’nden mezun oldu.',
@@ -46,36 +41,13 @@ export default function DoctorAboutSection({
     settings?.doctorPortraitUrl,
     '/uploads/corporate/doctor-portrait.jpg'
   );
-  const healthTurkiyeCertUrl = resolveMediaUrl(
-    settings?.healthTurkiyeCertificateUrl,
-    '/uploads/corporate/health-turkiye-certificate.jpeg'
-  );
-  const ministryCertUrl = resolveMediaUrl(
-    settings?.ministryCertificateUrl,
-    '/uploads/corporate/ministry-certificate.jpeg'
-  );
 
-  const lightboxGallery: LightboxItem[] = [
-    {
-      id: 'portrait',
-      title: settings?.doctorName || 'Prof. Dr. Mustafa Özdemir',
-      subtitle: 'Dermatoloji (Deri ve Zührevi Hastalıkları) & Lazer Uzmanı',
-      url: portraitUrl,
-    },
-    {
-      id: 'health-turkiye',
-      title: 'Health Türkiye Profilimiz',
-      subtitle: 'T.C. Sağlık Bakanlığı Resmi Sağlık Turizmi Portalı',
-      url: healthTurkiyeCertUrl,
-      externalUrl: HEALTH_TURKIYE_URL,
-    },
-    {
-      id: 'ministry-cert',
-      title: 'T.C. Sağlık Bakanlığı Yetki Belgemiz',
-      subtitle: 'Uluslararası Sağlık Turizmi Yetki Belgesi (Belge No: ST-3619)',
-      url: ministryCertUrl,
-    },
-  ].filter((item) => Boolean(item.url));
+  const portraitLightboxItem: LightboxItem = {
+    id: 'portrait',
+    title: settings?.doctorName || 'Prof. Dr. Mustafa Özdemir',
+    subtitle: 'Dermatoloji (Deri ve Zührevi Hastalıkları) & Lazer Uzmanı',
+    url: portraitUrl,
+  };
 
   const hasCustomLongBio =
     settings?.doctorBio && settings.doctorBio.includes('11 Haziran 1970');
@@ -87,13 +59,13 @@ export default function DoctorAboutSection({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-14">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-          {/* LEFT COLUMN: Doctor Clinical Portrait + 2 Equal Certificate Cards Below */}
-          <div className="lg:col-span-5 lg:mt-[46px] space-y-4">
-            {/* 1. Doctor Portrait (Clickable to Zoom) */}
+          {/* LEFT COLUMN: Doctor Clinical Portrait */}
+          <div className="lg:col-span-5 lg:mt-[46px]">
+            {/* Doctor Portrait (Clickable to Zoom) */}
             {portraitUrl && (
               <button
                 type="button"
-                onClick={() => setActiveImage(lightboxGallery[0])}
+                onClick={() => setActiveImage(portraitLightboxItem)}
                 aria-label="Prof. Dr. Mustafa Özdemir fotoğrafını büyüt"
                 className="group block w-full text-left relative rounded-3xl p-2 bg-gradient-to-br from-bronze-400/50 via-bronze-600/30 to-espresso-800/40 shadow-2xl shadow-espresso-900/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-bronze-600 cursor-zoom-in"
               >
@@ -111,106 +83,6 @@ export default function DoctorAboutSection({
                 </div>
               </button>
             )}
-
-            {/* 2 & 3. Equal Side-by-Side Cards: Health Türkiye Profilimiz & Yetki Belgemiz */}
-            <div className="grid grid-cols-2 gap-3.5">
-              {/* Health Türkiye Card */}
-              <div className="bg-white rounded-2xl border border-bronze-200/80 shadow-md hover:shadow-lg hover:border-bronze-400 transition-all overflow-hidden flex flex-col">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveImage(
-                      lightboxGallery.find((i) => i.id === 'health-turkiye') ||
-                        null
-                    )
-                  }
-                  className="group relative w-full h-28 sm:h-32 bg-white border-b border-bronze-100 p-2 flex items-center justify-center cursor-zoom-in focus:outline-none"
-                  aria-label="Health Türkiye görselini büyüt"
-                >
-                  {healthTurkiyeCertUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={healthTurkiyeCertUrl}
-                      alt="Health Türkiye Profilimiz"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  )}
-                  <span className="absolute top-2 right-2 p-1 rounded-lg bg-espresso-900/70 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ZoomIn className="w-3.5 h-3.5" />
-                  </span>
-                </button>
-                <div className="p-3 flex-1 flex flex-col justify-between space-y-1.5 bg-clinic-canvas/50">
-                  <div>
-                    <h3 className="text-xs font-serif font-bold text-espresso-900">
-                      Health Türkiye Profilimiz
-                    </h3>
-                    <p className="text-[11px] text-espresso-800/80 leading-snug mt-1">
-                      Health Turkey Profilimiz;
-                    </p>
-                  </div>
-                  <a
-                    href={HEALTH_TURKIYE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-start gap-1 text-[10px] sm:text-[11px] font-medium text-bronze-700 hover:text-espresso-900 underline underline-offset-2 break-all transition"
-                  >
-                    <span>{HEALTH_TURKIYE_URL}</span>
-                    <ExternalLink className="w-3 h-3 shrink-0 mt-0.5" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Yetki Belgemiz Card */}
-              <div className="bg-white rounded-2xl border border-bronze-200/80 shadow-md hover:shadow-lg hover:border-bronze-400 transition-all overflow-hidden flex flex-col">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveImage(
-                      lightboxGallery.find((i) => i.id === 'ministry-cert') ||
-                        null
-                    )
-                  }
-                  className="group relative w-full h-28 sm:h-32 bg-white border-b border-bronze-100 p-1.5 flex items-center justify-center cursor-zoom-in focus:outline-none"
-                  aria-label="Yetki Belgemiz görselini büyüt"
-                >
-                  {ministryCertUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={ministryCertUrl}
-                      alt="T.C. Sağlık Bakanlığı Yetki Belgemiz"
-                      className="max-h-full max-w-full object-contain rounded"
-                    />
-                  )}
-                  <span className="absolute top-2 right-2 p-1 rounded-lg bg-espresso-900/70 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ZoomIn className="w-3.5 h-3.5" />
-                  </span>
-                </button>
-                <div className="p-3 flex-1 flex flex-col justify-between space-y-1.5 bg-clinic-canvas/50">
-                  <div>
-                    <h3 className="text-xs font-serif font-bold text-espresso-900">
-                      Yetki Belgemiz
-                    </h3>
-                    <p className="text-[11px] text-espresso-800/80 leading-snug mt-1">
-                      T.C. Sağlık Bakanlığı onaylı Yetki Belgemize görselden
-                      ulaşabilirsiniz.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveImage(
-                        lightboxGallery.find((i) => i.id === 'ministry-cert') ||
-                          null
-                      )
-                    }
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-bronze-700 hover:text-espresso-900 transition text-left"
-                  >
-                    <ZoomIn className="w-3 h-3 shrink-0" />
-                    <span>Belgeyi Tam Boy İncele</span>
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* RIGHT COLUMN: Academic Biography & Expertise */}
@@ -340,39 +212,8 @@ export default function DoctorAboutSection({
                 <img
                   src={activeImage.url}
                   alt={activeImage.title}
-                  className="max-h-[68vh] w-auto object-contain rounded-xl shadow-md"
+                  className="max-h-[72vh] w-auto object-contain rounded-xl shadow-md"
                 />
-              </div>
-
-              <div className="px-6 py-3 bg-white border-t border-bronze-200 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  {lightboxGallery.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setActiveImage(item)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                        activeImage.id === item.id
-                          ? 'bg-bronze-700 text-white'
-                          : 'bg-peach-50 text-espresso-800 hover:bg-peach-100'
-                      }`}
-                    >
-                      {item.title}
-                    </button>
-                  ))}
-                </div>
-
-                {activeImage.externalUrl && (
-                  <a
-                    href={activeImage.externalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition"
-                  >
-                    <span>Resmi Profili Aç</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
               </div>
             </m.div>
           </m.div>
