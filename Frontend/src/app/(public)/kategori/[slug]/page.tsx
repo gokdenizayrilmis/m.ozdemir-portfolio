@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { categoryService, treatmentService } from '@/services';
 import TreatmentCard from '@/components/public/TreatmentCard';
-import { ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -48,55 +48,54 @@ export default async function CategoryDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const sortedTreatments = [...treatments].sort(
+    (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
+  );
+
   return (
-    <div className="bg-[#FAF8F5] min-h-screen py-8 sm:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="bg-clinic-canvas min-h-screen py-8 sm:py-14">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-10 sm:space-y-12">
         {/* Breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-6 flex items-center gap-2 text-xs text-slate-500 font-medium"
+          className="flex items-center gap-2 text-xs text-espresso-800/65 font-medium"
         >
-          <Link href="/" className="hover:text-amber-800 transition">
+          <Link href="/" className="hover:text-bronze-700 transition">
             Ana Sayfa
           </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-900 font-semibold">{category.title}</span>
+          <ChevronRight className="w-3.5 h-3.5 text-bronze-400" />
+          <span className="text-espresso-900 font-semibold">
+            {category.title}
+          </span>
         </nav>
 
-        {/* Category Header */}
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-sm mb-12 space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+        {/* Centered Category Heading (Matching Reference Design) */}
+        <div className="text-center max-w-3xl mx-auto space-y-3.5">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-peach-50 border border-peach-200 text-espresso-800 text-xs font-bold shadow-sm">
             <span>Klinik Uzmanlık Alanı</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">
-            {category.title} Tedavileri
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-sans font-extrabold tracking-tight text-espresso-900 leading-tight">
+            {category.title} Tedavilerimiz — Modern Yöntemler ve Kişiselleştirilmiş Çözümler
           </h1>
-          <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl">
+          <div className="w-14 h-1 bg-bronze-600 rounded-full mx-auto" />
+          <p className="text-espresso-800/80 text-xs sm:text-base leading-relaxed pt-1">
             {category.description}
           </p>
         </div>
 
-        {/* Treatments List in Category */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-serif font-bold text-slate-900">
-            Bu Kategorideki Klinik Tedavi Başlıkları ({treatments.length})
-          </h2>
-
-          {treatments.length === 0 ? (
-            <div className="bg-white p-12 text-center rounded-2xl border border-slate-200 text-sm text-slate-500">
-              Bu kategoride henüz yayınlanmış tedavi bulunmamaktadır.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {treatments.map((t) => (
-                <TreatmentCard key={t.id} treatment={t} />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* 4-Column Visual Treatments Grid */}
+        {sortedTreatments.length === 0 ? (
+          <div className="bg-white p-12 text-center rounded-3xl border border-bronze-200/80 text-sm text-espresso-800/70">
+            Bu kategoride henüz yayınlanmış tedavi bulunmamaktadır.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
+            {sortedTreatments.map((t) => (
+              <TreatmentCard key={t.id} treatment={t} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
