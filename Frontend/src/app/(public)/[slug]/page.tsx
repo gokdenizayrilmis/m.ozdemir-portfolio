@@ -1,21 +1,29 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { treatmentService, settingsService } from '@/services';
+import { categoryService, treatmentService, settingsService } from '@/services';
 import JsonLdSchema from '@/components/public/JsonLdSchema';
 import FaqAccordion from '@/components/public/FaqAccordion';
-import TreatmentCard from '@/components/public/TreatmentCard';
+import ContactActionButtons from '@/components/public/ContactActionButtons';
+import TreatmentMobileCategoryMenu from '@/components/public/TreatmentMobileCategoryMenu';
 import {
-  Phone,
-  MessageCircle,
   ChevronRight,
+  Layers,
   ShieldAlert,
+  Sparkles,
 } from 'lucide-react';
-import { createWhatsAppUrl, resolveMediaUrl } from '@/utils/cn';
+import { resolveMediaUrl } from '@/utils/cn';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  dermatoloji: 'Dermatoloji',
+  'kozmetik-dermatoloji': 'Kozmetik Dermatoloji',
+  'sac-hastaliklari': 'Saç Hastalıkları',
+  lazer: 'Lazer',
+};
 
 export async function generateMetadata({
   params,
@@ -59,40 +67,49 @@ export async function generateMetadata({
 
 export default async function TreatmentDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const [treatment, settings] = await Promise.all([
+  const [treatment, settings, categories] = await Promise.all([
     treatmentService.getBySlug(slug),
     settingsService.getSettings(),
+    categoryService.getAll(),
   ]);
 
   if (!treatment) {
     notFound();
   }
 
-  const allTreatments = await treatmentService.getAll(treatment.categorySlug);
-  const relatedTreatments = allTreatments
-    .filter((t) => t.id !== treatment.id)
-    .slice(0, 4);
+  const allCategoryTreatments = await treatmentService.getAll(
+    treatment.categorySlug
+  );
+  const sortedCategoryTreatments = [...allCategoryTreatments].sort(
+    (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
+  );
+
+  const matchedCategory = categories.find(
+    (c) => c.slug === treatment.categorySlug
+  );
+  const categoryLabel =
+    matchedCategory?.title ||
+    CATEGORY_LABELS[treatment.categorySlug] ||
+    treatment.categorySlug.replace(/-/g, ' ');
 
   const phone = settings?.phoneNumbers?.[0] || '+90 552 265 64 36';
   const whatsappNumber = settings?.whatsAppNumber || '905522656436';
-  const waUrl = createWhatsAppUrl(
-    whatsappNumber,
-    `Merhaba Prof. Dr. Mustafa Özdemir Kliniği, '${treatment.title}' hakkında bilgi ve randevu almak istiyorum.`
-  );
+  const whatsappMessage = `Merhaba Prof. Dr. Mustafa Özdemir Kliniği, '${treatment.title}' hakkında bilgi ve randevu almak istiyorum.`;
+
   const imageUrl = resolveMediaUrl(
     treatment.coverImageUrl,
     '/uploads/corporate/hero-showroom.jpg'
   );
 
   return (
-    <div className="bg-clinic-canvas min-h-screen py-8 sm:py-12">
+    <div className="bg-clinic-canvas min-h-screen py-8 sm:py-10">
       <JsonLdSchema type="Treatment" treatment={treatment} settings={settings} />
 
-      {/* Top Section: Breadcrumb + 2-Column Editorial Hero (Text Left, Large Square Photo Right) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
+        {/* 1. Top Breadcrumb Only */}
         <nav
           aria-label="Breadcrumb"
-          className="mb-6 sm:mb-8 flex flex-wrap items-center gap-2 text-xs text-espresso-800/65 font-medium"
+          className="flex flex-wrap items-center gap-2 text-xs text-espresso-800/65 font-medium"
         >
           <Link href="/" className="hover:text-bronze-700 transition">
             Ana Sayfa
@@ -100,9 +117,9 @@ export default async function TreatmentDetailPage({ params }: PageProps) {
           <ChevronRight className="w-3.5 h-3.5 text-bronze-400 shrink-0" />
           <Link
             href={`/kategori/${treatment.categorySlug}`}
-            className="hover:text-bronze-700 transition capitalize"
+            className="hover:text-bronze-700 transition"
           >
-            {treatment.categorySlug.replace('-', ' ')}
+            {categoryLabel}
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-bronze-400 shrink-0" />
           <span className="text-espresso-900 font-semibold truncate">
@@ -110,126 +127,170 @@ export default async function TreatmentDetailPage({ params }: PageProps) {
           </span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left: Persuasive Intro + Callout Box + Action Buttons */}
-          <div className="lg:col-span-7 space-y-5">
-            <span className="inline-block px-3.5 py-1 rounded-full bg-peach-50 text-bronze-800 border border-peach-200/80 text-xs font-bold uppercase tracking-wider">
-              {treatment.categorySlug.replace('-', ' ')} • Prof. Dr. Mustafa Özdemir Kliniği
-            </span>
+        {/* Mobile Collapsible Category Switcher (lg:hidden) */}
+        <TreatmentMobileCategoryMenu
+          categoryLabel={categoryLabel}
+          treatments={sortedCategoryTreatments}
+          activeSlug={treatment.slug}
+        />
 
-            <h1 className="text-2xl sm:text-3xl lg:text-[40px] font-sans font-extrabold tracking-tight text-espresso-900 leading-tight">
-              {treatment.title} — Prof. Dr. Mustafa Özdemir Kliniği
-            </h1>
+        {/* Unified 2-Column Layout Directly Below Breadcrumb */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* 2. LEFT COLUMN: Sticky Category Menu + Contact Card */}
+          <aside className="hidden lg:block lg:col-span-4 lg:sticky lg:top-28 space-y-6">
+            {/* In-Category Quick Navigation Card */}
+            <div className="bg-white rounded-3xl border border-bronze-200/80 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-peach-50/90 via-clinic-canvas to-peach-50/50 border-b border-bronze-200/70 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-bronze-600/10 border border-bronze-300/60 flex items-center justify-center text-bronze-700 shrink-0">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-bronze-700">
+                      Uzmanlık Branşı
+                    </span>
+                    <h2 className="text-base font-sans font-extrabold text-espresso-900 truncate">
+                      {categoryLabel}
+                    </h2>
+                  </div>
+                </div>
+                <span className="shrink-0 px-2.5 py-1 rounded-full bg-white border border-bronze-200 text-[11px] font-bold text-bronze-800">
+                  {sortedCategoryTreatments.length} Tedavi
+                </span>
+              </div>
 
-            <p className="text-sm sm:text-base text-espresso-800/85 leading-relaxed">
-              {treatment.summary}
-            </p>
-
-            <div className="bg-white border border-bronze-200/80 border-l-4 border-l-bronze-600 rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-espresso-800/90 leading-relaxed shadow-sm">
-              Prof. Dr. Mustafa Özdemir muayenehanesinde tanı ve tedavi
-              süreçleri, cilt yapınıza ve klinik bulgularınıza özel kanıta
-              dayalı dermatolojik protokollerle planlanır.
+              <nav
+                aria-label={`${categoryLabel} Tedavileri`}
+                className="max-h-[460px] overflow-y-auto divide-y divide-bronze-100/70"
+              >
+                {sortedCategoryTreatments.map((item) => {
+                  const isActive = item.slug === treatment.slug;
+                  return (
+                    <Link
+                      key={item.id}
+                      href={`/${item.slug}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`group flex items-center justify-between gap-3 px-5 py-3.5 text-xs sm:text-[13.5px] transition-all ${
+                        isActive
+                          ? 'border-l-4 border-l-bronze-600 bg-peach-50/90 font-bold text-espresso-900'
+                          : 'border-l-4 border-l-transparent text-espresso-800/80 hover:bg-peach-50/40 hover:text-espresso-900 font-medium'
+                      }`}
+                    >
+                      <span className="leading-snug">{item.title}</span>
+                      <ChevronRight
+                        className={`w-4 h-4 shrink-0 transition-transform ${
+                          isActive
+                            ? 'text-bronze-700 translate-x-0.5'
+                            : 'text-bronze-300 group-hover:text-bronze-600 group-hover:translate-x-0.5'
+                        }`}
+                      />
+                    </Link>
+                  );
+                })}
+              </nav>
             </div>
 
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-bronze-600 hover:bg-bronze-500 text-white text-xs sm:text-sm font-bold shadow-md transition"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Doktora Danış (WhatsApp)</span>
-              </a>
+            {/* Mini Quick Contact Card */}
+            <div className="bg-white rounded-3xl p-6 border border-bronze-200/80 shadow-sm space-y-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-peach-50 border border-peach-200 flex items-center justify-center text-bronze-700 shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-sans font-extrabold text-espresso-900">
+                    Muayene &amp; Bilgi Planlaması
+                  </h3>
+                  <p className="text-[11px] text-espresso-800/70">
+                    Prof. Dr. Mustafa Özdemir Kliniği
+                  </p>
+                </div>
+              </div>
 
-              <a
-                href={`tel:${phone.replace(/\s+/g, '')}`}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white hover:bg-peach-50 text-espresso-900 border border-espresso-900/25 text-xs sm:text-sm font-bold transition"
-              >
-                <Phone className="w-4 h-4 text-bronze-700" />
-                <span>Randevu &amp; Bilgi: {phone}</span>
-              </a>
+              <p className="text-xs text-espresso-800/80 leading-relaxed">
+                <strong>{treatment.title}</strong> uygulaması ve kişiye özel
+                tedavi protokollerimiz hakkında bilgi almak için kliniğimizle
+                doğrudan iletişime geçebilirsiniz.
+              </p>
+
+              <ContactActionButtons
+                phone={phone}
+                whatsappNumber={whatsappNumber}
+                whatsappMessage={whatsappMessage}
+                callLabel="Kliniği Arayın"
+                whatsappLabel="WhatsApp Randevu"
+                layout="stack"
+                sourcePageSlug={`/${treatment.slug}`}
+              />
             </div>
-          </div>
+          </aside>
 
-          {/* Right: Large Rounded Square/4:3 Treatment Image */}
-          <div className="lg:col-span-5">
-            {imageUrl && (
-              <div className="relative aspect-[4/3] sm:aspect-square w-full max-w-md mx-auto lg:max-w-none rounded-3xl overflow-hidden shadow-xl border border-bronze-200/80 bg-white">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imageUrl}
-                  alt={treatment.title}
-                  className="w-full h-full object-cover"
+          {/* 3. RIGHT COLUMN: Unified Main Treatment Card + FAQ + Ministry Notice */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Unified Main Treatment Card (Title + Image + Medical Content) */}
+            <article className="bg-white rounded-3xl border border-stone-200/80 shadow-sm overflow-hidden">
+              {/* Top Header Area */}
+              <div className="p-6 sm:p-8 pb-4 space-y-3">
+                <span className="inline-block px-3.5 py-1 rounded-full bg-peach-50 text-bronze-800 border border-peach-200/80 text-xs font-bold uppercase tracking-wider">
+                  {categoryLabel} • Prof. Dr. Mustafa Özdemir
+                </span>
+
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-sans font-extrabold tracking-tight text-espresso-900 leading-tight">
+                  {treatment.title}
+                </h1>
+
+                {treatment.summary && (
+                  <p className="text-sm sm:text-base text-espresso-800/80 leading-relaxed">
+                    {treatment.summary}
+                  </p>
+                )}
+              </div>
+
+              {/* Middle Treatment Visual */}
+              {imageUrl && (
+                <div className="px-6 sm:px-8">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imageUrl}
+                    alt={treatment.title}
+                    className="aspect-[16/9] max-h-[380px] w-full object-cover rounded-2xl border border-stone-200/60 shadow-sm"
+                  />
+                </div>
+              )}
+
+              {/* Bottom Detailed Medical Content */}
+              <div className="p-6 sm:p-8 pt-6 prose-medical">
+                <div
+                  dangerouslySetInnerHTML={{ __html: treatment.htmlContent }}
                 />
               </div>
+            </article>
+
+            {/* FAQ Accordion Card */}
+            {treatment.faqs && treatment.faqs.length > 0 && (
+              <FaqAccordion
+                faqs={treatment.faqs}
+                title={`${treatment.title} Hakkında Merak Edilenler`}
+              />
             )}
+
+            {/* T.C. Ministry of Health Information Box */}
+            <div className="p-5 bg-peach-50/70 border border-peach-200/80 rounded-2xl flex items-start gap-3.5 text-xs text-espresso-800/85 leading-relaxed">
+              <ShieldAlert className="w-5 h-5 text-bronze-700 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-espresso-900">
+                  T.C. Sağlık Bakanlığı Bilgilendirmesi:
+                </strong>
+                <p className="mt-1">
+                  Mevzuat gereği sitemizde işlem fiyatları yer almamaktadır.
+                  Sayfadaki bilgiler genel bilgilendirme amaçlıdır; kesin tanı
+                  ve tedavi için mutlaka doktorunuza
+                  başvurunuz.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Full-Width Bronze/Gold CTA Strip (Matching Reference Design) */}
-      <div className="my-10 sm:my-14 bg-gradient-to-r from-bronze-700 via-bronze-600 to-bronze-700 text-white py-7 sm:py-8 px-4 sm:px-6 shadow-md">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <p className="text-base sm:text-xl font-sans font-bold tracking-tight">
-            {treatment.title} Hakkında Detaylı Bilgi ve Muayene Planlaması İçin
-            Kliniğimize Ulaşabilirsiniz!
-          </p>
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 inline-flex items-center justify-center px-7 py-3 rounded-full bg-white hover:bg-peach-50 text-espresso-900 text-xs sm:text-sm font-bold shadow-sm transition"
-          >
-            Bilgi Al
-          </a>
-        </div>
-      </div>
-
-      {/* Bottom Section: Detailed Medical Content + FAQ + Related Visual Cards */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-10">
-        <article className="bg-white rounded-3xl p-6 sm:p-10 lg:p-12 border border-bronze-200/80 shadow-sm prose-medical">
-          <div dangerouslySetInnerHTML={{ __html: treatment.htmlContent }} />
-        </article>
-
-        {treatment.faqs && treatment.faqs.length > 0 && (
-          <FaqAccordion
-            faqs={treatment.faqs}
-            title={`${treatment.title} Hakkında Merak Edilenler`}
-          />
-        )}
-
-        <div className="p-5 bg-peach-50/70 border border-peach-200/80 rounded-2xl flex items-start gap-3.5 text-xs text-espresso-800/85 leading-relaxed">
-          <ShieldAlert className="w-5 h-5 text-bronze-700 shrink-0 mt-0.5" />
-          <div>
-            <strong className="text-espresso-900">
-              T.C. Sağlık Bakanlığı Bilgilendirmesi:
-            </strong>
-            <p className="mt-1">
-              Mevzuat gereği sitemizde işlem fiyatları yer almamaktadır.
-              Sayfadaki bilgiler genel bilgilendirme amaçlıdır; kesin tanı ve
-              tedavi için mutlaka Prof. Dr. Mustafa Özdemir&apos;e başvurunuz.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Related Treatments in the Same Category */}
-      {relatedTreatments.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-14 sm:mt-16 space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-xl sm:text-2xl font-sans font-extrabold tracking-tight text-espresso-900">
-              Bu Uzmanlık Alanındaki Diğer Tedavilerimiz
-            </h2>
-            <div className="w-12 h-1 bg-bronze-600 rounded-full mx-auto" />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
-            {relatedTreatments.map((rt) => (
-              <TreatmentCard key={rt.id} treatment={rt} />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
