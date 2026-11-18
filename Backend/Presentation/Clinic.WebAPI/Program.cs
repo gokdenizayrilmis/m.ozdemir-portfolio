@@ -1,7 +1,7 @@
 using Clinic.Application;
 using Clinic.Infrastructure;
 using Clinic.Persistence;
-using Clinic.Persistence.Seed;
+using Clinic.Persistence.Context;
 using Clinic.WebAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,11 +38,19 @@ var webRootPath = app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurre
 var uploadsPath = Path.Combine(webRootPath, "uploads");
 Directory.CreateDirectory(uploadsPath);
 
-// 4. Execute Database Seeder at Startup
+// 4. Ensure MongoDB Indexes at Startup (no automatic data seeding)
 using (var scope = app.Services.CreateScope())
 {
-    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-    await seeder.SeedAsync();
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+        await dbContext.EnsureIndexesAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(ex, "MongoDB indeks kontrolü sırasında bağlantı kurulamadı.");
+    }
 }
 
 // 5. Configure HTTP Request Pipeline

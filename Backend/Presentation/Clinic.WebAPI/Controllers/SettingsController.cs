@@ -5,21 +5,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Clinic.WebAPI.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class SettingsController : ControllerBase
+public class SettingsController : BaseApiController
 {
-    private readonly IMediator _mediator;
-
-    public SettingsController(IMediator mediator)
+    public SettingsController(IMediator mediator) : base(mediator)
     {
-        _mediator = mediator;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetSettings(CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetSiteSettingsQuery(), cancellationToken);
+        var result = await Mediator.Send(new GetSiteSettingsQuery(), cancellationToken);
         return Ok(result);
     }
 
@@ -27,8 +22,7 @@ public class SettingsController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateSettings([FromBody] UpdateSiteSettingsCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
+        var result = await Mediator.Send(command, cancellationToken);
+        return OkOrBadRequest(result);
     }
 }
-

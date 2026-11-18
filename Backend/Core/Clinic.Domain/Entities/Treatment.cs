@@ -3,7 +3,7 @@ using Clinic.Domain.ValueObjects;
 
 namespace Clinic.Domain.Entities;
 
-public class Treatment : BaseEntity
+public class Treatment : BaseEntity, ISlugEntity
 {
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;

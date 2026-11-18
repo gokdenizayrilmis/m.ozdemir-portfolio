@@ -1,5 +1,10 @@
 namespace Clinic.Domain.Common;
 
+public interface ISlugEntity
+{
+    string Slug { get; set; }
+}
+
 public abstract class BaseEntity
 {
     public string Id { get; set; } = string.Empty;

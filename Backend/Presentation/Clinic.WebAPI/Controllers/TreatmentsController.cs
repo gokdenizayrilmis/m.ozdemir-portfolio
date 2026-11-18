@@ -5,15 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Clinic.WebAPI.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class TreatmentsController : ControllerBase
+public class TreatmentsController : BaseApiController
 {
-    private readonly IMediator _mediator;
-
-    public TreatmentsController(IMediator mediator)
+    public TreatmentsController(IMediator mediator) : base(mediator)
     {
-        _mediator = mediator;
     }
 
     [HttpGet]
@@ -22,42 +17,38 @@ public class TreatmentsController : ControllerBase
         [FromQuery] bool onlyPublished = true,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetAllTreatmentsQuery(categorySlug, onlyPublished), cancellationToken);
+        var result = await Mediator.Send(new GetAllTreatmentsQuery(categorySlug, onlyPublished), cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetTreatmentBySlugQuery(slug), cancellationToken);
-        return result.IsSuccess ? Ok(result) : NotFound(result);
+        var result = await Mediator.Send(new GetTreatmentBySlugQuery(slug), cancellationToken);
+        return OkOrNotFound(result);
     }
 
     [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateTreatmentCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.IsSuccess
-            ? CreatedAtAction(nameof(GetBySlug), new { slug = result.Data!.Slug }, result)
-            : BadRequest(result);
+        var result = await Mediator.Send(command, cancellationToken);
+        return CreatedOrBadRequest(result, nameof(GetBySlug), new { slug = result.Data?.Slug });
     }
 
     [Authorize]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] UpdateTreatmentCommand command, CancellationToken cancellationToken = default)
     {
-        var updatedCommand = command with { Id = id };
-        var result = await _mediator.Send(updatedCommand, cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
+        var result = await Mediator.Send(command with { Id = id }, cancellationToken);
+        return OkOrBadRequest(result);
     }
 
     [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new DeleteTreatmentCommand(id), cancellationToken);
-        return result.IsSuccess ? Ok(result) : NotFound(result);
+        var result = await Mediator.Send(new DeleteTreatmentCommand(id), cancellationToken);
+        return OkOrNotFound(result);
     }
 }
-

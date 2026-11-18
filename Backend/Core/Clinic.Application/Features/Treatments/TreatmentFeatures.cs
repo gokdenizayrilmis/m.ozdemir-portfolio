@@ -173,6 +173,8 @@ public class UpdateTreatmentCommandHandler : IRequestHandler<UpdateTreatmentComm
             return Result<Treatment>.Failure("Güncellenecek tedavi kaydı bulunamadı.");
         }
 
+        var oldSlug = existing.Slug;
+        var oldCategorySlug = existing.CategorySlug;
         var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
         if (await _repository.ExistsBySlugAsync(normalizedSlug, request.Id, cancellationToken))
         {
@@ -193,7 +195,9 @@ public class UpdateTreatmentCommandHandler : IRequestHandler<UpdateTreatmentComm
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(existing, cancellationToken);
-        await _revalidationService.RevalidatePathsAsync(new[] { "/", $"/{existing.Slug}", $"/kategori/{existing.CategorySlug}" }, cancellationToken);
+        await _revalidationService.RevalidatePathsAsync(
+            new[] { "/", $"/{oldSlug}", $"/{existing.Slug}", $"/kategori/{oldCategorySlug}", $"/kategori/{existing.CategorySlug}" },
+            cancellationToken);
 
         return Result<Treatment>.Success(existing, "Tedavi sayfası başarıyla güncellendi.");
     }
@@ -206,13 +210,16 @@ public class DeleteTreatmentCommandHandler : IRequestHandler<DeleteTreatmentComm
 {
     private readonly ITreatmentRepository _repository;
     private readonly INextJsRevalidationService _revalidationService;
+    private readonly IImageStorageService _imageStorageService;
 
     public DeleteTreatmentCommandHandler(
         ITreatmentRepository repository,
-        INextJsRevalidationService revalidationService)
+        INextJsRevalidationService revalidationService,
+        IImageStorageService imageStorageService)
     {
         _repository = repository;
         _revalidationService = revalidationService;
+        _imageStorageService = imageStorageService;
     }
 
     public async Task<Result> Handle(DeleteTreatmentCommand request, CancellationToken cancellationToken)
@@ -224,7 +231,16 @@ public class DeleteTreatmentCommandHandler : IRequestHandler<DeleteTreatmentComm
         }
 
         await _repository.DeleteAsync(request.Id, cancellationToken);
-        await _revalidationService.RevalidatePathsAsync(new[] { "/", $"/{existing.Slug}" }, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(existing.CoverImageUrl) &&
+            !existing.CoverImageUrl.Contains("/uploads/corporate/", StringComparison.OrdinalIgnoreCase))
+        {
+            await _imageStorageService.DeleteImageAsync(existing.CoverImageUrl, cancellationToken);
+        }
+
+        await _revalidationService.RevalidatePathsAsync(
+            new[] { "/", $"/{existing.Slug}", $"/kategori/{existing.CategorySlug}" },
+            cancellationToken);
 
         return Result.Success("Tedavi sayfası başarıyla silindi.");
     }

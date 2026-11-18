@@ -167,6 +167,7 @@ public class UpdateBlogCommandHandler : IRequestHandler<UpdateBlogCommand, Resul
             return Result<BlogPost>.Failure("Güncellenecek blog yazısı bulunamadı.");
         }
 
+        var oldSlug = existing.Slug;
         var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
         if (await _repository.ExistsBySlugAsync(normalizedSlug, request.Id, cancellationToken))
         {
@@ -185,7 +186,9 @@ public class UpdateBlogCommandHandler : IRequestHandler<UpdateBlogCommand, Resul
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(existing, cancellationToken);
-        await _revalidationService.RevalidatePathsAsync(new[] { "/", "/blog", $"/blog/{existing.Slug}" }, cancellationToken);
+        await _revalidationService.RevalidatePathsAsync(
+            new[] { "/", "/blog", $"/blog/{oldSlug}", $"/blog/{existing.Slug}" },
+            cancellationToken);
 
         return Result<BlogPost>.Success(existing, "Blog yazısı başarıyla güncellendi.");
     }
@@ -198,13 +201,16 @@ public class DeleteBlogCommandHandler : IRequestHandler<DeleteBlogCommand, Resul
 {
     private readonly IBlogPostRepository _repository;
     private readonly INextJsRevalidationService _revalidationService;
+    private readonly IImageStorageService _imageStorageService;
 
     public DeleteBlogCommandHandler(
         IBlogPostRepository repository,
-        INextJsRevalidationService revalidationService)
+        INextJsRevalidationService revalidationService,
+        IImageStorageService imageStorageService)
     {
         _repository = repository;
         _revalidationService = revalidationService;
+        _imageStorageService = imageStorageService;
     }
 
     public async Task<Result> Handle(DeleteBlogCommand request, CancellationToken cancellationToken)
@@ -216,6 +222,13 @@ public class DeleteBlogCommandHandler : IRequestHandler<DeleteBlogCommand, Resul
         }
 
         await _repository.DeleteAsync(request.Id, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(existing.CoverImageUrl) &&
+            !existing.CoverImageUrl.Contains("/uploads/corporate/", StringComparison.OrdinalIgnoreCase))
+        {
+            await _imageStorageService.DeleteImageAsync(existing.CoverImageUrl, cancellationToken);
+        }
+
         await _revalidationService.RevalidatePathsAsync(new[] { "/", "/blog", $"/blog/{existing.Slug}" }, cancellationToken);
 
         return Result.Success("Blog yazısı başarıyla silindi.");

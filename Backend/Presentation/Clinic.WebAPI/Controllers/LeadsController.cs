@@ -5,36 +5,31 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Clinic.WebAPI.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class LeadsController : ControllerBase
+public class LeadsController : BaseApiController
 {
-    private readonly IMediator _mediator;
-
-    public LeadsController(IMediator mediator)
+    public LeadsController(IMediator mediator) : base(mediator)
     {
-        _mediator = mediator;
     }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateLeadCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
+        var result = await Mediator.Send(command, cancellationToken);
+        return OkOrBadRequest(result);
     }
 
     [HttpPost("track-click")]
     public async Task<IActionResult> TrackClick([FromBody] TrackClickCommand command, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
+        var result = await Mediator.Send(command, cancellationToken);
+        return OkOrBadRequest(result);
     }
 
     [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] bool? isRead = null, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetAllLeadsQuery(isRead), cancellationToken);
+        var result = await Mediator.Send(new GetAllLeadsQuery(isRead), cancellationToken);
         return Ok(result);
     }
 
@@ -42,8 +37,7 @@ public class LeadsController : ControllerBase
     [HttpPatch("{id}/read")]
     public async Task<IActionResult> MarkAsRead(string id, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new MarkLeadAsReadCommand(id), cancellationToken);
-        return result.IsSuccess ? Ok(result) : NotFound(result);
+        var result = await Mediator.Send(new MarkLeadAsReadCommand(id), cancellationToken);
+        return OkOrNotFound(result);
     }
 }
-

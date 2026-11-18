@@ -1,7 +1,6 @@
 using Clinic.Application.Common.Interfaces;
 using Clinic.Persistence.Context;
 using Clinic.Persistence.Repositories;
-using Clinic.Persistence.Seed;
 using Clinic.Persistence.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +22,6 @@ public static class DependencyInjection
         services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
         services.AddScoped<ILeadRepository, LeadRepository>();
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
-
-        services.AddScoped<DatabaseSeeder>();
 
         return services;
     }

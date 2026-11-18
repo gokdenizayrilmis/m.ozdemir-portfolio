@@ -119,6 +119,16 @@ public record UpdateCategoryCommand(
     SeoMetadata? Seo
 ) : IRequest<Result<Category>>;
 
+public class UpdateCategoryCommandValidator : AbstractValidator<UpdateCategoryCommand>
+{
+    public UpdateCategoryCommandValidator()
+    {
+        RuleFor(x => x.Id).NotEmpty().WithMessage("Kategori ID zorunludur.");
+        RuleFor(x => x.Title).NotEmpty().WithMessage("Kategori adı zorunludur.");
+        RuleFor(x => x.Slug).NotEmpty().WithMessage("Kategori Slug alanı zorunludur.");
+    }
+}
+
 public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryCommand, Result<Category>>
 {
     private readonly ICategoryRepository _repository;
@@ -140,6 +150,7 @@ public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryComman
             return Result<Category>.Failure("Güncellenecek kategori bulunamadı.");
         }
 
+        var oldSlug = existing.Slug;
         var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
         if (await _repository.ExistsBySlugAsync(normalizedSlug, request.Id, cancellationToken))
         {
@@ -154,7 +165,9 @@ public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryComman
         existing.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(existing, cancellationToken);
-        await _revalidationService.RevalidatePathsAsync(new[] { "/", $"/kategori/{existing.Slug}" }, cancellationToken);
+        await _revalidationService.RevalidatePathsAsync(
+            new[] { "/", $"/kategori/{oldSlug}", $"/kategori/{existing.Slug}" },
+            cancellationToken);
 
         return Result<Category>.Success(existing, "Kategori başarıyla güncellendi.");
     }
@@ -166,10 +179,14 @@ public record DeleteCategoryCommand(string Id) : IRequest<Result>;
 public class DeleteCategoryCommandHandler : IRequestHandler<DeleteCategoryCommand, Result>
 {
     private readonly ICategoryRepository _repository;
+    private readonly INextJsRevalidationService _revalidationService;
 
-    public DeleteCategoryCommandHandler(ICategoryRepository repository)
+    public DeleteCategoryCommandHandler(
+        ICategoryRepository repository,
+        INextJsRevalidationService revalidationService)
     {
         _repository = repository;
+        _revalidationService = revalidationService;
     }
 
     public async Task<Result> Handle(DeleteCategoryCommand request, CancellationToken cancellationToken)
@@ -181,6 +198,8 @@ public class DeleteCategoryCommandHandler : IRequestHandler<DeleteCategoryComman
         }
 
         await _repository.DeleteAsync(request.Id, cancellationToken);
+        await _revalidationService.RevalidatePathsAsync(new[] { "/", $"/kategori/{existing.Slug}" }, cancellationToken);
+
         return Result.Success("Kategori başarıyla silindi.");
     }
 }
