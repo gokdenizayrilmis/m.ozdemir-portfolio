@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { m } from 'motion/react';
 import { DailyTrendPoint } from '@/types';
 import { BarChart3 } from 'lucide-react';
 
@@ -17,9 +18,25 @@ export default function ConversionTrendChart({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] p-6">
-        <div className="h-72 flex items-center justify-center text-xs text-slate-400">
-          Günlük dönüşüm trendi yükleniyor...
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] p-6 space-y-5 animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-4 w-44 bg-slate-200 rounded-md" />
+            <div className="h-3 w-72 bg-slate-100 rounded-md" />
+          </div>
+          <div className="flex gap-3">
+            <div className="h-4 w-16 bg-slate-100 rounded-md" />
+            <div className="h-4 w-20 bg-slate-100 rounded-md" />
+          </div>
+        </div>
+        <div className="h-64 sm:h-72 rounded-xl bg-slate-50 border border-slate-100 flex items-end justify-between px-6 pb-6 pt-12 gap-3">
+          {[35, 58, 42, 74, 62, 85, 50, 68, 90, 60].map((h, i) => (
+            <div
+              key={i}
+              style={{ height: `${h}%` }}
+              className="flex-1 bg-slate-200/70 rounded-t-lg"
+            />
+          ))}
         </div>
       </div>
     );
@@ -174,23 +191,41 @@ export default function ConversionTrendChart({
           })}
 
           {/* Area Fills */}
-          <path d={waArea} fill="url(#waAreaGradient)" />
-          <path d={phoneArea} fill="url(#phoneAreaGradient)" />
+          <m.path
+            d={waArea}
+            fill="url(#waAreaGradient)"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.45 }}
+          />
+          <m.path
+            d={phoneArea}
+            fill="url(#phoneAreaGradient)"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.45, delay: 0.08 }}
+          />
 
           {/* Smooth Line Strokes */}
-          <path
+          <m.path
             d={waLine}
             fill="none"
             stroke="#10b981"
             strokeWidth="2.4"
             strokeLinecap="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           />
-          <path
+          <m.path
             d={phoneLine}
             fill="none"
             stroke="#6366f1"
             strokeWidth="2.4"
             strokeLinecap="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           />
 
           {/* X-Axis Labels */}
@@ -267,27 +302,31 @@ export default function ConversionTrendChart({
                 Math.max(6, (hoverIndex / Math.max(1, points.length - 1)) * 100)
               )}%`,
             }}
-            className="pointer-events-none absolute top-2 -translate-x-1/2 z-20 bg-slate-900/95 backdrop-blur-md text-white rounded-xl px-3.5 py-2.5 shadow-xl border border-slate-700/80 text-xs min-w-[165px] space-y-1.5"
+            className="pointer-events-none absolute top-2 -translate-x-1/2 z-20 bg-white/95 backdrop-blur-md text-slate-900 rounded-xl px-3.5 py-2.5 shadow-lg border border-slate-200/90 text-xs min-w-[165px] space-y-1.5"
           >
-            <div className="font-semibold text-slate-200 border-b border-slate-800 pb-1 flex items-center justify-between gap-3">
+            <div className="font-semibold text-slate-900 border-b border-slate-100 pb-1 flex items-center justify-between gap-3">
               <span>{activePoint.label}</span>
-              <span className="text-[11px] text-amber-400 font-bold tabular-nums">
+              <span className="text-[11px] text-slate-600 font-bold tabular-nums">
                 Toplam: {activePoint.total}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4 text-[11px]">
-              <span className="flex items-center gap-1.5 text-emerald-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 WhatsApp
               </span>
-              <strong className="tabular-nums">{activePoint.whatsApp}</strong>
+              <strong className="tabular-nums text-slate-900">
+                {activePoint.whatsApp}
+              </strong>
             </div>
             <div className="flex items-center justify-between gap-4 text-[11px]">
-              <span className="flex items-center gap-1.5 text-indigo-300">
-                <span className="w-2 h-2 rounded-full bg-indigo-400" />
+              <span className="flex items-center gap-1.5 text-indigo-700 font-medium">
+                <span className="w-2 h-2 rounded-full bg-indigo-500" />
                 Telefon
               </span>
-              <strong className="tabular-nums">{activePoint.phone}</strong>
+              <strong className="tabular-nums text-slate-900">
+                {activePoint.phone}
+              </strong>
             </div>
           </div>
         )}

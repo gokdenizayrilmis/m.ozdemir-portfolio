@@ -187,40 +187,26 @@ export default function SeoMetaBox({
         />
       </div>
 
-      {/* Schema Type & NoIndex */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-        <div>
-          <label className="block text-xs font-semibold text-slate-800 mb-1.5">
-            Schema.org Yapısal Veri Tipi
-          </label>
-          <select
-            value={seo.schemaType || 'MedicalWebPage'}
-            onChange={(e) => handleFieldChange('schemaType', e.target.value)}
-            className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
-          >
-            <option value="MedicalWebPage">
-              MedicalWebPage (Klinik Tedavi Sayfası)
-            </option>
-            <option value="MedicalScholarlyArticle">
-              MedicalScholarlyArticle (Blog / Makale)
-            </option>
-            <option value="ItemPage">ItemPage (Genel Sayfa)</option>
-          </select>
+      {/* Schema Info Badge & NoIndex */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-slate-100">
+        <div className="inline-flex items-center gap-2 text-xs text-slate-500">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold">
+            Schema: {seo.schemaType || 'MedicalWebPage'}
+          </span>
+          <span>Otomatik yapısal veri aktif</span>
         </div>
 
-        <div className="flex items-center sm:justify-center pt-4">
-          <label className="inline-flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={seo.noIndex}
-              onChange={(e) => handleFieldChange('noIndex', e.target.checked)}
-              className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
-            />
-            <span className="text-xs font-semibold text-slate-700">
-              Bu sayfayı arama motorlarına kapat (noindex)
-            </span>
-          </label>
-        </div>
+        <label className="inline-flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={seo.noIndex}
+            onChange={(e) => handleFieldChange('noIndex', e.target.checked)}
+            className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
+          />
+          <span className="text-xs font-semibold text-slate-700">
+            Bu sayfayı arama motorlarına kapat (noindex)
+          </span>
+        </label>
       </div>
     </div>
   );

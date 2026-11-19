@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { AnimatePresence, m } from 'motion/react';
 import { authService } from '@/services';
 import {
   LayoutDashboard,
@@ -211,7 +212,7 @@ export default function AdminSidebar({
             <Link
               href="/admin/settings?tab=contact"
               onClick={() => onCloseMobile?.()}
-              title="Klinik Ayarları (İletişim, Analitik, Güvenlik)"
+              title="Klinik Ayarları"
               className={`group relative flex items-center justify-center p-3 rounded-xl text-[13px] transition-all ${
                 isSettingsRoute
                   ? 'bg-white/10 text-white font-medium border-l-2 border-amber-400'
@@ -254,35 +255,45 @@ export default function AdminSidebar({
                 />
               </button>
 
-              {settingsExpanded && (
-                <div className="mt-1 ml-5 pl-3 border-l border-slate-800 space-y-1">
-                  {SETTINGS_SUB_ITEMS.map((sub) => {
-                    const SubIcon = sub.icon;
-                    const isSubActive =
-                      isSettingsRoute && activeTab === sub.tab;
+              <AnimatePresence initial={false}>
+                {settingsExpanded && (
+                  <m.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-1 ml-5 pl-3 border-l border-slate-800 space-y-1">
+                      {SETTINGS_SUB_ITEMS.map((sub) => {
+                        const SubIcon = sub.icon;
+                        const isSubActive =
+                          isSettingsRoute && activeTab === sub.tab;
 
-                    return (
-                      <Link
-                        key={sub.tab}
-                        href={sub.href}
-                        onClick={() => onCloseMobile?.()}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${
-                          isSubActive
-                            ? 'bg-amber-400/15 text-amber-300 font-semibold'
-                            : 'text-slate-400 hover:text-slate-100 hover:bg-white/5 font-medium'
-                        }`}
-                      >
-                        <SubIcon
-                          className={`w-3.5 h-3.5 shrink-0 ${
-                            isSubActive ? 'text-amber-400' : 'text-slate-500'
-                          }`}
-                        />
-                        <span className="truncate">{sub.title}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+                        return (
+                          <Link
+                            key={sub.tab}
+                            href={sub.href}
+                            onClick={() => onCloseMobile?.()}
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all ${
+                              isSubActive
+                                ? 'bg-amber-400/15 text-amber-300 font-semibold'
+                                : 'text-slate-400 hover:text-slate-100 hover:bg-white/5 font-medium'
+                            }`}
+                          >
+                            <SubIcon
+                              className={`w-3.5 h-3.5 shrink-0 ${
+                                isSubActive ? 'text-amber-400' : 'text-slate-500'
+                              }`}
+                            />
+                            <span className="truncate">{sub.title}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </m.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </nav>
@@ -323,7 +334,7 @@ export default function AdminSidebar({
 
   return (
     <>
-      {/* Desktop Sticky Collapsible Sidebar */}
+      {/* Desktop Dark Slate Sticky Collapsible Sidebar */}
       <aside
         className={`hidden lg:flex lg:sticky lg:top-0 lg:h-screen shrink-0 bg-slate-950 text-slate-300 flex-col justify-between border-r border-slate-800/90 overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out ${
           isCollapsed ? 'w-[76px]' : 'w-64'
@@ -333,17 +344,29 @@ export default function AdminSidebar({
       </aside>
 
       {/* Mobile Slide-Over Drawer + Backdrop */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div
-            onClick={onCloseMobile}
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity"
-          />
-          <aside className="relative z-10 w-64 max-w-[80vw] h-full bg-slate-950 text-slate-300 flex flex-col justify-between border-r border-slate-800 shadow-2xl overflow-y-auto">
-            {renderSidebarContent(false, true)}
-          </aside>
-        </div>
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={onCloseMobile}
+              className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs"
+            />
+            <m.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-10 w-64 max-w-[80vw] h-full bg-slate-950 text-slate-300 flex flex-col justify-between border-r border-slate-800 shadow-2xl overflow-y-auto"
+            >
+              {renderSidebarContent(false, true)}
+            </m.aside>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
