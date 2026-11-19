@@ -4,16 +4,12 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
+import { LazyMotion, MotionConfig, domMax } from 'motion/react';
 import AdminSidebar, {
   SETTINGS_SUB_ITEMS,
 } from '@/components/admin/AdminSidebar';
 import { authService } from '@/services';
-import {
-  ChevronRight,
-  ExternalLink,
-  Loader2,
-  Menu,
-} from 'lucide-react';
+import { ChevronRight, ExternalLink, Loader2, Menu } from 'lucide-react';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin', 'latin-ext'],
@@ -54,7 +50,7 @@ function AdminTopbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }) {
   const crumbs = getBreadcrumbs();
 
   return (
-    <header className="sticky top-0 z-30 h-14 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 h-14 bg-white/85 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-4">
       {/* Left: Mobile Hamburger + Dynamic Breadcrumb */}
       <div className="flex items-center gap-3 min-w-0">
         <button
@@ -162,7 +158,13 @@ export default function AdminLayout({
   const fontWrapperClass = `${plusJakartaSans.variable} ${interAdmin.variable} admin-shell`;
 
   if (isLoginPage) {
-    return <div className={fontWrapperClass}>{children}</div>;
+    return (
+      <LazyMotion features={domMax}>
+        <MotionConfig reducedMotion="user">
+          <div className={fontWrapperClass}>{children}</div>
+        </MotionConfig>
+      </LazyMotion>
+    );
   }
 
   if (!isAuthenticated) {
@@ -177,25 +179,33 @@ export default function AdminLayout({
   }
 
   return (
-    <div
-      className={`${fontWrapperClass} min-h-screen bg-slate-50/70 flex flex-col lg:flex-row`}
-    >
-      <Suspense fallback={null}>
-        <AdminSidebar
-          mobileOpen={mobileMenuOpen}
-          onCloseMobile={() => setMobileMenuOpen(false)}
-        />
-      </Suspense>
+    <LazyMotion features={domMax}>
+      <MotionConfig reducedMotion="user">
+        <div
+          className={`${fontWrapperClass} min-h-screen bg-slate-50/70 flex flex-col lg:flex-row`}
+        >
+          <Suspense fallback={null}>
+            <AdminSidebar
+              mobileOpen={mobileMenuOpen}
+              onCloseMobile={() => setMobileMenuOpen(false)}
+            />
+          </Suspense>
 
-      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
-        <Suspense fallback={<div className="h-14 border-b border-slate-200/80 bg-white/80" />}>
-          <AdminTopbar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
-        </Suspense>
+          <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+            <Suspense
+              fallback={
+                <div className="h-14 border-b border-slate-200/80 bg-white/85" />
+              }
+            >
+              <AdminTopbar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
+            </Suspense>
 
-        <main className="flex-1 max-w-[1440px] mx-auto w-full px-4 sm:px-6 py-6">
-          {children}
-        </main>
-      </div>
-    </div>
+            <main className="flex-1 max-w-[1440px] mx-auto w-full px-4 sm:px-6 py-6">
+              {children}
+            </main>
+          </div>
+        </div>
+      </MotionConfig>
+    </LazyMotion>
   );
 }

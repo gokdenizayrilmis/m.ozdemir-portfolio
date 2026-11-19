@@ -2,13 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { m } from 'motion/react';
 import { leadService } from '@/services';
 import {
   LeadRangeFilter,
   LeadsSummary,
   PagedLeadsResponse,
 } from '@/types';
+import AnimatedCounter from '@/components/admin/AnimatedCounter';
 import ConversionTrendChart from '@/components/admin/ConversionTrendChart';
+import ChannelDistributionDonut from '@/components/admin/ChannelDistributionDonut';
 import {
   MessageCircle,
   Phone,
@@ -198,7 +201,7 @@ export default function AdminOverviewDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header + Date Range Picker & CSV Export */}
+      {/* Header + Sliding Pill Date Range Picker & CSV Export */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <span className="text-[11px] font-semibold uppercase tracking-widest text-amber-600">
@@ -214,22 +217,36 @@ export default function AdminOverviewDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Date Range Selector */}
-          <div className="inline-flex items-center bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs text-xs">
-            {RANGE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => handleRangeChange(opt.value)}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition ${
-                  range === opt.value
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+          {/* 1. Sliding Pill Date Range Selector (layoutId) */}
+          <div className="inline-flex items-center bg-white p-1 rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] text-xs">
+            {RANGE_OPTIONS.map((opt) => {
+              const isSelected = range === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handleRangeChange(opt.value)}
+                  className={`relative px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                    isSelected
+                      ? 'text-white'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {isSelected && (
+                    <m.div
+                      layoutId="activeDateRange"
+                      transition={{
+                        type: 'spring',
+                        stiffness: 420,
+                        damping: 32,
+                      }}
+                      className="absolute inset-0 rounded-lg bg-slate-900 shadow-xs"
+                    />
+                  )}
+                  <span className="relative z-10">{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* CSV Export Button */}
@@ -244,118 +261,170 @@ export default function AdminOverviewDashboard() {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            <span>CSV İndir (Excel Raporu)</span>
+            <span>CSV İndir</span>
           </button>
         </div>
       </div>
 
-      {/* 1. Enriched 3 KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Total Conversions */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between gap-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <span className="text-xs font-medium text-slate-500">
-                Toplam Hasta Dönüşümü
+      {/* 2. 3 Animated KPI Cards (Staggered Entrance + Hover Lift + AnimatedCounter) */}
+      {loadingSummary ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] space-y-4 animate-pulse"
+            >
+              <div className="flex justify-between items-start">
+                <div className="space-y-2">
+                  <div className="h-3 w-32 bg-slate-100 rounded-md" />
+                  <div className="h-8 w-20 bg-slate-200 rounded-lg" />
+                </div>
+                <div className="w-11 h-11 bg-slate-100 rounded-xl" />
+              </div>
+              <div className="pt-2 border-t border-slate-100 flex justify-between">
+                <div className="h-5 w-36 bg-slate-100 rounded-md" />
+                <div className="h-4 w-20 bg-slate-100 rounded-md" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* KPI 1: Total Conversions */}
+          <m.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0 }}
+            whileHover={{ y: -3 }}
+            className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-xs font-medium text-slate-500">
+                  Toplam Hasta Dönüşümü
+                </span>
+                <h3 className="text-3xl font-heading font-bold tracking-tight text-slate-900 mt-1">
+                  <AnimatedCounter value={summary.totalClicks} />
+                </h3>
+              </div>
+              <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
+                <Award className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              <ChangeBadge
+                changePercent={totalChange}
+                showForAll={range === 'all'}
+              />
+              <span className="text-[11px] text-slate-400 font-medium">
+                WhatsApp + Arama
               </span>
-              <h3 className="text-3xl font-heading font-bold tracking-tight tabular-nums text-slate-900 mt-1">
-                {loadingSummary ? '...' : summary.totalClicks}
-              </h3>
             </div>
-            <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
-              <Award className="w-5 h-5" />
-            </div>
-          </div>
+          </m.div>
 
-          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-            <ChangeBadge
-              changePercent={totalChange}
-              showForAll={range === 'all'}
-            />
-            <span className="text-[11px] text-slate-400 font-medium">
-              WhatsApp + Arama
-            </span>
-          </div>
-        </div>
-
-        {/* WhatsApp Clicks */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between gap-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-slate-500">
-                  WhatsApp Tıklamaları
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold tabular-nums">
-                  %{waSharePercent} Pay
-                </span>
+          {/* KPI 2: WhatsApp Clicks */}
+          <m.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+            whileHover={{ y: -3 }}
+            className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-500">
+                    WhatsApp Tıklamaları
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold tabular-nums">
+                    %{waSharePercent} Pay
+                  </span>
+                </div>
+                <h3 className="text-3xl font-heading font-bold tracking-tight text-emerald-600 mt-1">
+                  <AnimatedCounter value={summary.whatsAppClicks} />
+                </h3>
               </div>
-              <h3 className="text-3xl font-heading font-bold tracking-tight tabular-nums text-emerald-600 mt-1">
-                {loadingSummary ? '...' : summary.whatsAppClicks}
-              </h3>
-            </div>
-            <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
-              <MessageCircle className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-            <ChangeBadge
-              changePercent={waChange}
-              showForAll={range === 'all'}
-            />
-            <span className="text-[11px] text-slate-400 font-medium">
-              Mesaj &amp; Randevu
-            </span>
-          </div>
-        </div>
-
-        {/* Phone Calls */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between gap-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-slate-500">
-                  Telefon Aramaları
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold tabular-nums">
-                  %{phoneSharePercent} Pay
-                </span>
+              <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
+                <MessageCircle className="w-5 h-5" />
               </div>
-              <h3 className="text-3xl font-heading font-bold tracking-tight tabular-nums text-indigo-600 mt-1">
-                {loadingSummary ? '...' : summary.phoneClicks}
-              </h3>
             </div>
-            <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl">
-              <Phone className="w-5 h-5" />
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-            <ChangeBadge
-              changePercent={phoneChange}
-              showForAll={range === 'all'}
-            />
-            <span className="text-[11px] text-slate-400 font-medium">
-              Doğrudan Arama
-            </span>
-          </div>
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              <ChangeBadge
+                changePercent={waChange}
+                showForAll={range === 'all'}
+              />
+              <span className="text-[11px] text-slate-400 font-medium">
+                Mesaj &amp; Randevu
+              </span>
+            </div>
+          </m.div>
+
+          {/* KPI 3: Phone Calls */}
+          <m.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            whileHover={{ y: -3 }}
+            className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] hover:shadow-md transition-shadow flex flex-col justify-between gap-4"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-500">
+                    Telefon Aramaları
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold tabular-nums">
+                    %{phoneSharePercent} Pay
+                  </span>
+                </div>
+                <h3 className="text-3xl font-heading font-bold tracking-tight text-indigo-600 mt-1">
+                  <AnimatedCounter value={summary.phoneClicks} />
+                </h3>
+              </div>
+              <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl">
+                <Phone className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              <ChangeBadge
+                changePercent={phoneChange}
+                showForAll={range === 'all'}
+              />
+              <span className="text-[11px] text-slate-400 font-medium">
+                Doğrudan Arama
+              </span>
+            </div>
+          </m.div>
+        </div>
+      )}
+
+      {/* 3. Dual Animated Chart Row (8 cols AreaChart + 4 cols Donut) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-8">
+          <ConversionTrendChart
+            data={summary.dailyTrend}
+            loading={loadingSummary}
+          />
+        </div>
+        <div className="lg:col-span-4">
+          <ChannelDistributionDonut
+            whatsAppClicks={summary.whatsAppClicks}
+            phoneClicks={summary.phoneClicks}
+            loading={loadingSummary}
+          />
         </div>
       </div>
 
-      {/* 2. Daily Conversion Trend Area Chart */}
-      <ConversionTrendChart
-        data={summary.dailyTrend}
-        loading={loadingSummary}
-      />
-
-      {/* 3. Vercel Analytics-Style Progress Bar Lists: Campaigns & Top Pages */}
+      {/* 4. Vercel Analytics-Style Animated Progress Bar Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Google Ads Campaign Breakdown */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_1px_3px_rgba(15,23,42,0.04)] space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-amber-600" />
+              <Layers className="w-5 h-5 text-indigo-600" />
               <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base">
                 Google Ads Kampanya Performansı
               </h3>
@@ -370,7 +439,11 @@ export default function AdminOverviewDashboard() {
 
           <div className="space-y-2 text-xs max-h-72 overflow-y-auto pr-1">
             {loadingSummary ? (
-              <p className="py-4 text-slate-400">Yükleniyor...</p>
+              <div className="space-y-2 animate-pulse">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="h-10 bg-slate-100 rounded-xl" />
+                ))}
+              </div>
             ) : summary.byCampaign.length === 0 ? (
               <p className="py-4 text-slate-400">
                 Seçili tarih aralığında kampanya verisi yok.
@@ -386,14 +459,16 @@ export default function AdminOverviewDashboard() {
                     key={item.campaign}
                     className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/50 px-3.5 py-2.5 flex items-center justify-between gap-3"
                   >
-                    <div
-                      style={{ width: `${widthPercent}%` }}
-                      className="absolute inset-y-0 left-0 bg-amber-500/12 rounded-r-lg transition-all duration-500"
+                    <m.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${widthPercent}%` }}
+                      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute inset-y-0 left-0 bg-indigo-500/10 rounded-r-lg"
                     />
                     <span className="relative z-10 font-medium text-slate-800 truncate">
                       {item.campaign}
                     </span>
-                    <span className="relative z-10 shrink-0 font-bold tabular-nums text-amber-800 bg-amber-50 border border-amber-200/60 px-2.5 py-0.5 rounded-full">
+                    <span className="relative z-10 shrink-0 font-bold tabular-nums text-indigo-800 bg-indigo-50 border border-indigo-200/60 px-2.5 py-0.5 rounded-full">
                       {item.count}
                     </span>
                   </div>
@@ -404,7 +479,7 @@ export default function AdminOverviewDashboard() {
         </div>
 
         {/* Top Converting Landing Pages */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_1px_3px_rgba(15,23,42,0.04)] space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-600" />
@@ -422,7 +497,11 @@ export default function AdminOverviewDashboard() {
 
           <div className="space-y-2 text-xs max-h-72 overflow-y-auto pr-1">
             {loadingSummary ? (
-              <p className="py-4 text-slate-400">Yükleniyor...</p>
+              <div className="space-y-2 animate-pulse">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="h-10 bg-slate-100 rounded-xl" />
+                ))}
+              </div>
             ) : summary.byPage.length === 0 ? (
               <p className="py-4 text-slate-400">
                 Seçili tarih aralığında sayfa verisi yok.
@@ -439,9 +518,11 @@ export default function AdminOverviewDashboard() {
                     key={item.pageSlug}
                     className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/50 px-3.5 py-2.5 flex items-center justify-between gap-3"
                   >
-                    <div
-                      style={{ width: `${widthPercent}%` }}
-                      className="absolute inset-y-0 left-0 bg-emerald-500/12 rounded-r-lg transition-all duration-500"
+                    <m.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${widthPercent}%` }}
+                      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute inset-y-0 left-0 bg-emerald-500/10 rounded-r-lg"
                     />
                     <div className="relative z-10 flex items-center gap-1.5 min-w-0">
                       <span className="font-mono font-medium text-slate-800 truncate">
@@ -467,8 +548,8 @@ export default function AdminOverviewDashboard() {
         </div>
       </div>
 
-      {/* 4. Conversion Logs Table with Channel Filter & Pagination */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+      {/* 5. Conversion Logs Table with Sliding Channel Filter & Shimmer Skeleton */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_1px_3px_rgba(15,23,42,0.04)] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-slate-700" />
@@ -477,22 +558,36 @@ export default function AdminOverviewDashboard() {
             </h3>
           </div>
 
-          {/* Channel Filter Tabs */}
+          {/* Sliding Pill Channel Filter Tabs */}
           <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl text-xs">
-            {CHANNEL_FILTERS.map((ch) => (
-              <button
-                key={ch.value}
-                type="button"
-                onClick={() => handleChannelChange(ch.value)}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition ${
-                  channelType === ch.value
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {ch.label}
-              </button>
-            ))}
+            {CHANNEL_FILTERS.map((ch) => {
+              const isSelected = channelType === ch.value;
+              return (
+                <button
+                  key={ch.value}
+                  type="button"
+                  onClick={() => handleChannelChange(ch.value)}
+                  className={`relative px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                    isSelected
+                      ? 'text-slate-900'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {isSelected && (
+                    <m.div
+                      layoutId="activeChannelFilter"
+                      transition={{
+                        type: 'spring',
+                        stiffness: 420,
+                        damping: 32,
+                      }}
+                      className="absolute inset-0 rounded-lg bg-white shadow-xs"
+                    />
+                  )}
+                  <span className="relative z-10">{ch.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -508,11 +603,22 @@ export default function AdminOverviewDashboard() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loadingTable ? (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-400">
-                    Kayıtlar yükleniyor...
-                  </td>
-                </tr>
+                [0, 1, 2, 3, 4].map((i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-3.5 px-4">
+                      <div className="h-3.5 w-32 bg-slate-100 rounded-md" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="h-5 w-20 bg-slate-100 rounded-full" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="h-3.5 w-44 bg-slate-100 rounded-md" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="h-3.5 w-28 bg-slate-100 rounded-md" />
+                    </td>
+                  </tr>
+                ))
               ) : pagedLeads.items.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-slate-400">

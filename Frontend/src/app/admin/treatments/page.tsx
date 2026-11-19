@@ -1,24 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { AnimatePresence, m } from 'motion/react';
 import { treatmentService, categoryService } from '@/services';
 import { Treatment, Category, SeoMetadata, FaqItem } from '@/types';
 import SeoMetaBox from '@/components/admin/SeoMetaBox';
 import FaqListEditor from '@/components/admin/FaqListEditor';
 import ImageUpload from '@/components/admin/ImageUpload';
+import SectionContentEditor from '@/components/admin/SectionContentEditor';
+import { resolveMediaUrl } from '@/utils/cn';
+import { slugifyTurkish } from '@/utils/slug';
 import {
   Plus,
   Search,
   Edit2,
   Trash2,
   Eye,
-  Loader2,
   X,
   Stethoscope,
   Image as ImageIcon,
+  ExternalLink,
+  AlertCircle,
+  FileText,
+  HelpCircle,
+  Globe,
+  Loader2,
 } from 'lucide-react';
-import Link from 'next/link';
-import { resolveMediaUrl } from '@/utils/cn';
+
+type ModalTab = 'content' | 'faqs' | 'seo';
 
 export default function AdminTreatmentsPage() {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
@@ -26,19 +36,23 @@ export default function AdminTreatmentsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'published' | 'draft'
+  >('all');
 
   // Edit / Create modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState<ModalTab>('content');
   const [editingTreatment, setEditingTreatment] =
     useState<Partial<Treatment> | null>(null);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<{
     text: string;
     type: 'success' | 'error';
   } | null>(null);
-
-  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -55,14 +69,28 @@ export default function AdminTreatmentsPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
   const handleOpenCreate = () => {
+    setModalError(null);
+    setModalTab('content');
+    setSlugManuallyEdited(false);
     setEditingTreatment({
       title: '',
       slug: '',
       categorySlug: categories[0]?.slug || 'dermatoloji',
       categoryId: categories[0]?.id || '',
       summary: '',
-      htmlContent: '<p>Tedavi detay açıklaması buraya gelecek...</p>',
+      htmlContent: '<h2>Tedavi Hakkında</h2>\n<p>Tedavi detay açıklaması buraya gelecek...</p>',
       coverImageUrl: '/uploads/treatments/lazerle-leke-tedavisi.jpg',
       displayOrder: 1,
       isPublished: true,
@@ -79,6 +107,9 @@ export default function AdminTreatmentsPage() {
   };
 
   const handleOpenEdit = (t: Treatment) => {
+    setModalError(null);
+    setModalTab('content');
+    setSlugManuallyEdited(true);
     setEditingTreatment({
       ...t,
       faqs: t.faqs || [],
@@ -95,32 +126,37 @@ export default function AdminTreatmentsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingTreatment?.title || !editingTreatment?.slug) {
-      alert('Başlık ve URL Slug alanları zorunludur.');
+    setModalError(null);
+
+    if (!editingTreatment?.title?.trim() || !editingTreatment?.slug?.trim()) {
+      setModalTab('content');
+      setModalError('Tedavi başlığı ve URL bağlantısı (slug) zorunludur.');
+      return;
+    }
+
+    if (!editingTreatment?.summary?.trim()) {
+      setModalTab('content');
+      setModalError('Lütfen tedavi için kısa bir özet açıklama giriniz.');
       return;
     }
 
     setSaving(true);
-    let res;
-    if (editingTreatment.id) {
-      res = await treatmentService.update(
-        editingTreatment.id,
-        editingTreatment
-      );
-    } else {
-      res = await treatmentService.create(editingTreatment);
-    }
+    const res = editingTreatment.id
+      ? await treatmentService.update(editingTreatment.id, editingTreatment)
+      : await treatmentService.create(editingTreatment);
     setSaving(false);
 
     if (res.isSuccess) {
       setStatusMessage({
-        text: 'Tedavi başarıyla kaydedildi.',
+        text: editingTreatment.id
+          ? 'Tedavi başarıyla güncellendi.'
+          : 'Yeni tedavi başarıyla eklendi.',
         type: 'success',
       });
       setIsModalOpen(false);
       loadData();
     } else {
-      alert(res.message || 'Kayıt sırasında hata oluştu.');
+      setModalError(res.message || 'Kayıt sırasında bir hata oluştu.');
     }
   };
 
@@ -182,13 +218,13 @@ export default function AdminTreatmentsPage() {
             Tedavi Sayfaları ({treatments.length})
           </h1>
           <p className="text-xs text-slate-500">
-            {treatments.length} klinik tedaviyi yönetin, Rank Math tarzı SEO
-            başlıklarını ve Google FAQ sorularını düzenleyin
+            {treatments.length} klinik tedaviyi yönetin, SEO başlıklarını ve
+            Google FAQ sorularını düzenleyin
           </p>
         </div>
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-md transition"
+          className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition"
         >
           <Plus className="w-4 h-4" />
           <span>Yeni Tedavi Ekle</span>
@@ -205,13 +241,13 @@ export default function AdminTreatmentsPage() {
       )}
 
       {/* Filter, Status Pills and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
             <input
               type="text"
-              placeholder="Tedavi adı veya slug ile ara..."
+              placeholder="Tedavi adı veya URL ile ara..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
@@ -271,11 +307,24 @@ export default function AdminTreatmentsPage() {
       </div>
 
       {/* Treatments Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Tedaviler yükleniyor...</span>
+          <div className="p-4 space-y-3 animate-pulse">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-4 px-2 py-2 border-b border-slate-100 last:border-0"
+              >
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 shrink-0" />
+                  <div className="h-3.5 w-48 bg-slate-200 rounded-md" />
+                </div>
+                <div className="h-3.5 w-32 bg-slate-100 rounded-md hidden sm:block" />
+                <div className="h-5 w-20 bg-slate-100 rounded-full" />
+                <div className="h-5 w-16 bg-slate-100 rounded-full" />
+                <div className="h-6 w-20 bg-slate-100 rounded-lg" />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -283,7 +332,7 @@ export default function AdminTreatmentsPage() {
               <thead className="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-200/70">
                 <tr>
                   <th className="py-3 px-4">Tedavi Başlığı</th>
-                  <th className="py-3 px-4">URL Slug</th>
+                  <th className="py-3 px-4">URL Bağlantısı</th>
                   <th className="py-3 px-4">Kategori</th>
                   <th className="py-3 px-4">SSS (FAQ)</th>
                   <th className="py-3 px-4">Durum</th>
@@ -317,8 +366,10 @@ export default function AdminTreatmentsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-500">
-                        /{t.slug}
+                      <td className="py-3 px-4">
+                        <span className="inline-block px-2.5 py-1 rounded-md bg-slate-100/80 text-slate-700 text-xs font-medium">
+                          /{t.slug}
+                        </span>
                       </td>
                       <td className="py-3 px-4">
                         <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
@@ -403,250 +454,368 @@ export default function AdminTreatmentsPage() {
         )}
       </div>
 
-      {/* Edit / Create Full Modal */}
-      {isModalOpen && editingTreatment && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-10 shadow-2xl space-y-6 my-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl">
-                  <Stethoscope className="w-6 h-6" />
+      {/* Modern Tabbed Modal with Sticky Header & Sticky Footer */}
+      <AnimatePresence>
+        {isModalOpen && editingTreatment && (
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setIsModalOpen(false)}
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+          >
+            <m.form
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              onSubmit={handleSave}
+              className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200/90 overflow-hidden"
+            >
+              {/* Sticky Header */}
+              <div className="px-6 py-4 bg-white border-b border-slate-200/80 shrink-0 space-y-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl shrink-0">
+                      <Stethoscope className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-base sm:text-lg font-heading font-bold tracking-tight text-slate-900 truncate">
+                        {editingTreatment.id
+                          ? `Düzenle: ${editingTreatment.title || 'Tedavi'}`
+                          : 'Yeni Tedavi Ekle'}
+                      </h2>
+                      <p className="text-xs text-slate-500 truncate">
+                        İçerik, Sıkça Sorulan Sorular ve Google SEO önizlemesi
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {editingTreatment.id && editingTreatment.slug && (
+                      <Link
+                        href={`/${editingTreatment.slug}`}
+                        target="_blank"
+                        className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition"
+                      >
+                        <span>Canlıda Gör</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(false)}
+                      className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition"
+                      aria-label="Kapat"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-heading font-bold tracking-tight text-slate-900">
-                    {editingTreatment.id
-                      ? 'Tedaviyi Düzenle'
-                      : 'Yeni Tedavi Ekle'}
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    İçerik, Rank Math SERP önizlemesi ve Google FAQ şeması
-                  </p>
+
+                {/* 3-Tab Navigation with Sliding Pill */}
+                <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl text-xs">
+                  {(
+                    [
+                      {
+                        id: 'content',
+                        label: 'İçerik & Görsel',
+                        icon: FileText,
+                      },
+                      {
+                        id: 'faqs',
+                        label: `SSS (${editingTreatment.faqs?.length || 0})`,
+                        icon: HelpCircle,
+                      },
+                      {
+                        id: 'seo',
+                        label: 'SEO & Google Önizleme',
+                        icon: Globe,
+                      },
+                    ] as const
+                  ).map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = modalTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setModalTab(tab.id)}
+                        className={`relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-semibold transition-colors ${
+                          isActive
+                            ? 'text-slate-900'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {isActive && (
+                          <m.div
+                            layoutId="treatmentModalTab"
+                            transition={{
+                              type: 'spring',
+                              stiffness: 420,
+                              damping: 32,
+                            }}
+                            className="absolute inset-0 rounded-lg bg-white shadow-xs"
+                          />
+                        )}
+                        <Icon className="relative z-10 w-3.5 h-3.5" />
+                        <span className="relative z-10">{tab.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <form onSubmit={handleSave} className="space-y-6 text-xs">
-              {/* Basic Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Tedavi Başlığı <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingTreatment.title || ''}
-                    onChange={(e) =>
-                      setEditingTreatment({
-                        ...editingTreatment,
-                        title: e.target.value,
-                        slug:
-                          editingTreatment.slug ||
-                          e.target.value
-                            .toLowerCase()
-                            .replace(/[^a-z0-9ğüşıöç]/g, '-')
-                            .replace(/-+/g, '-'),
-                      })
-                    }
-                    placeholder="Örn: Lazerle Leke Tedavisi"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-                  />
-                </div>
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs bg-slate-50/50">
+                {modalError && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs font-medium">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{modalError}</span>
+                  </div>
+                )}
 
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    URL Slug (Google Ads Landing URL){' '}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingTreatment.slug || ''}
-                    onChange={(e) =>
-                      setEditingTreatment({
-                        ...editingTreatment,
-                        slug: e.target.value,
-                      })
-                    }
-                    placeholder="lazerle-leke-tedavisi"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-mono"
-                  />
-                </div>
-              </div>
+                {modalTab === 'content' && (
+                  <div className="space-y-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Tedavi Başlığı <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editingTreatment.title || ''}
+                          onChange={(e) => {
+                            const nextTitle = e.target.value;
+                            setEditingTreatment({
+                              ...editingTreatment,
+                              title: nextTitle,
+                              slug: slugManuallyEdited
+                                ? editingTreatment.slug
+                                : slugifyTurkish(nextTitle),
+                            });
+                          }}
+                          placeholder="Örn: Lazerle Leke Tedavisi"
+                          className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        />
+                      </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Kategori
-                  </label>
-                  <select
-                    value={editingTreatment.categorySlug || 'dermatoloji'}
-                    onChange={(e) => {
-                      const selected = categories.find(
-                        (c) => c.slug === e.target.value
-                      );
-                      setEditingTreatment({
-                        ...editingTreatment,
-                        categorySlug: e.target.value,
-                        categoryId: selected?.id || '',
-                      });
-                    }}
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.slug}>
-                        {c.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          URL Bağlantısı (Slug){' '}
+                          <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editingTreatment.slug || ''}
+                          onChange={(e) => {
+                            setSlugManuallyEdited(true);
+                            setEditingTreatment({
+                              ...editingTreatment,
+                              slug: slugifyTurkish(e.target.value),
+                            });
+                          }}
+                          placeholder="lazerle-leke-tedavisi"
+                          className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Sıralama (Display Order)
-                  </label>
-                  <input
-                    type="number"
-                    value={editingTreatment.displayOrder || 1}
-                    onChange={(e) =>
-                      setEditingTreatment({
-                        ...editingTreatment,
-                        displayOrder: parseInt(e.target.value) || 1,
-                      })
-                    }
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                  />
-                </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Uzmanlık Kategorisi
+                        </label>
+                        <select
+                          value={editingTreatment.categorySlug || 'dermatoloji'}
+                          onChange={(e) => {
+                            const selected = categories.find(
+                              (c) => c.slug === e.target.value
+                            );
+                            setEditingTreatment({
+                              ...editingTreatment,
+                              categorySlug: e.target.value,
+                              categoryId: selected?.id || '',
+                            });
+                          }}
+                          className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+                        >
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.slug}>
+                              {c.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                <div className="flex items-center pt-6">
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={editingTreatment.isPublished}
-                      onChange={(e) =>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Gösterim Sırası
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={editingTreatment.displayOrder || 1}
+                          onChange={(e) =>
+                            setEditingTreatment({
+                              ...editingTreatment,
+                              displayOrder: Math.max(
+                                1,
+                                parseInt(e.target.value, 10) || 1
+                              ),
+                            })
+                          }
+                          className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none tabular-nums"
+                        />
+                      </div>
+
+                      <div className="pb-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingTreatment({
+                              ...editingTreatment,
+                              isPublished: !editingTreatment.isPublished,
+                            })
+                          }
+                          className="inline-flex items-center gap-2.5 focus:outline-none"
+                        >
+                          <span
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                              editingTreatment.isPublished
+                                ? 'bg-emerald-600'
+                                : 'bg-slate-300'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${
+                                editingTreatment.isPublished
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              }`}
+                            />
+                          </span>
+                          <span className="font-semibold text-slate-700 text-xs">
+                            {editingTreatment.isPublished
+                              ? 'Yayında (Aktif)'
+                              : 'Taslak (Gizli)'}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <ImageUpload
+                      label="Tedavi Kapak Görseli"
+                      description="Tedavi kartlarında ve detay sayfasında gösterilecek ana görsel"
+                      folder="treatments"
+                      value={editingTreatment.coverImageUrl || ''}
+                      onChange={(url) =>
                         setEditingTreatment({
                           ...editingTreatment,
-                          isPublished: e.target.checked,
+                          coverImageUrl: url,
                         })
                       }
-                      className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
                     />
-                    <span className="font-semibold text-slate-700 text-xs">
-                      Yayında Olsun (Aktif)
-                    </span>
-                  </label>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Kısa Özet <span className="text-rose-500">*</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        required
+                        value={editingTreatment.summary || ''}
+                        onChange={(e) =>
+                          setEditingTreatment({
+                            ...editingTreatment,
+                            summary: e.target.value,
+                          })
+                        }
+                        placeholder="Sayfa başlığının hemen altında gösterilecek 1-2 cümlelik özet bilgi..."
+                        className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none"
+                      />
+                    </div>
+
+                    <SectionContentEditor
+                      label="Tedavi Detay İçeriği"
+                      value={editingTreatment.htmlContent || ''}
+                      onChange={(html) =>
+                        setEditingTreatment({
+                          ...editingTreatment,
+                          htmlContent: html,
+                        })
+                      }
+                    />
+                  </div>
+                )}
+
+                {modalTab === 'faqs' && (
+                  <FaqListEditor
+                    faqs={editingTreatment.faqs || []}
+                    onChange={(faqs: FaqItem[]) =>
+                      setEditingTreatment({ ...editingTreatment, faqs })
+                    }
+                  />
+                )}
+
+                {modalTab === 'seo' && (
+                  <SeoMetaBox
+                    seo={
+                      editingTreatment.seo || {
+                        metaTitle: '',
+                        metaDescription: '',
+                        focusKeywords: [],
+                        noIndex: false,
+                        schemaType: 'MedicalWebPage',
+                      }
+                    }
+                    slug={editingTreatment.slug || ''}
+                    defaultTitle={editingTreatment.title || ''}
+                    onChange={(seo: SeoMetadata) =>
+                      setEditingTreatment({ ...editingTreatment, seo })
+                    }
+                  />
+                )}
+              </div>
+
+              {/* Sticky Footer */}
+              <div className="px-6 py-4 bg-white border-t border-slate-200/80 shrink-0 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-[11px] text-slate-500 font-medium tabular-nums">
+                  {editingTreatment.faqs?.length || 0} SSS Sorusu • SEO Başlığı:{' '}
+                  {(
+                    editingTreatment.seo?.metaTitle ||
+                    editingTreatment.title ||
+                    ''
+                  ).length}
+                  /60 karakter
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold transition"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-sm transition"
+                  >
+                    {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>{saving ? 'Kaydediliyor...' : 'Tedaviyi Kaydet'}</span>
+                  </button>
                 </div>
               </div>
-
-              <ImageUpload
-                label="Tedavi Kapak Görseli (CoverImageUrl)"
-                description="Tedavi kartlarında ve detay sayfası üst vitrininde gösterilecek kapak görseli"
-                folder="treatments"
-                value={editingTreatment.coverImageUrl || ''}
-                onChange={(url) =>
-                  setEditingTreatment({
-                    ...editingTreatment,
-                    coverImageUrl: url,
-                  })
-                }
-              />
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Özet Açıklama (Lead Summary)
-                </label>
-                <textarea
-                  rows={2}
-                  value={editingTreatment.summary || ''}
-                  onChange={(e) =>
-                    setEditingTreatment({
-                      ...editingTreatment,
-                      summary: e.target.value,
-                    })
-                  }
-                  placeholder="Sayfa başlığının altında gösterilecek özet bilgi..."
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Tedavi Detay İçeriği (HTML Destekli)
-                </label>
-                <textarea
-                  rows={8}
-                  value={editingTreatment.htmlContent || ''}
-                  onChange={(e) =>
-                    setEditingTreatment({
-                      ...editingTreatment,
-                      htmlContent: e.target.value,
-                    })
-                  }
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              {/* FAQ List Editor */}
-              <FaqListEditor
-                faqs={editingTreatment.faqs || []}
-                onChange={(faqs: FaqItem[]) =>
-                  setEditingTreatment({ ...editingTreatment, faqs })
-                }
-              />
-
-              {/* SEO Rank Math Meta Box */}
-              <SeoMetaBox
-                seo={
-                  editingTreatment.seo || {
-                    metaTitle: '',
-                    metaDescription: '',
-                    focusKeywords: [],
-                    noIndex: false,
-                    schemaType: 'MedicalWebPage',
-                  }
-                }
-                slug={editingTreatment.slug || ''}
-                defaultTitle={editingTreatment.title || ''}
-                onChange={(seo: SeoMetadata) =>
-                  setEditingTreatment({ ...editingTreatment, seo })
-                }
-              />
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl font-semibold transition flex items-center gap-2"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Kaydediliyor...</span>
-                    </>
-                  ) : (
-                    <span>Tedaviyi Kaydet</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </m.form>
+          </m.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
-

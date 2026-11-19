@@ -1,10 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { AnimatePresence, m } from 'motion/react';
 import { blogService } from '@/services';
 import { BlogPost, SeoMetadata } from '@/types';
 import SeoMetaBox from '@/components/admin/SeoMetaBox';
 import ImageUpload from '@/components/admin/ImageUpload';
+import SectionContentEditor from '@/components/admin/SectionContentEditor';
+import { resolveMediaUrl } from '@/utils/cn';
+import { slugifyTurkish } from '@/utils/slug';
 import {
   Plus,
   Search,
@@ -15,9 +20,13 @@ import {
   X,
   BookOpen,
   Image as ImageIcon,
+  ExternalLink,
+  AlertCircle,
+  FileText,
+  Globe,
 } from 'lucide-react';
-import Link from 'next/link';
-import { resolveMediaUrl } from '@/utils/cn';
+
+type BlogModalTab = 'content' | 'seo';
 
 export default function AdminBlogsPage() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -28,9 +37,12 @@ export default function AdminBlogsPage() {
   >('all');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState<BlogModalTab>('content');
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(
     null
   );
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -45,12 +57,26 @@ export default function AdminBlogsPage() {
     loadBlogs();
   }, []);
 
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
   const handleOpenCreate = () => {
+    setModalError(null);
+    setModalTab('content');
+    setSlugManuallyEdited(false);
     setEditingBlog({
       title: '',
       slug: '',
       summary: '',
-      htmlContent: '<p>Makale içeriği buraya gelecek...</p>',
+      htmlContent: '<h2>Makale Başlığı</h2>\n<p>Makale içeriği buraya gelecek...</p>',
       author: 'Prof. Dr. Mustafa Özdemir',
       coverImageUrl: '/uploads/treatments/lazerle-leke-tedavisi.jpg',
       isPublished: true,
@@ -67,31 +93,49 @@ export default function AdminBlogsPage() {
   };
 
   const handleOpenEdit = (b: BlogPost) => {
-    setEditingBlog(b);
+    setModalError(null);
+    setModalTab('content');
+    setSlugManuallyEdited(true);
+    setEditingBlog({
+      ...b,
+      seo: b.seo || {
+        metaTitle: `${b.title} | Prof. Dr. Mustafa Özdemir`,
+        metaDescription: b.summary,
+        focusKeywords: [],
+        noIndex: false,
+        schemaType: 'MedicalScholarlyArticle',
+      },
+    });
     setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingBlog?.title || !editingBlog?.slug) {
-      alert('Başlık ve URL Slug alanları zorunludur.');
+    setModalError(null);
+
+    if (!editingBlog?.title?.trim() || !editingBlog?.slug?.trim()) {
+      setModalTab('content');
+      setModalError('Makale başlığı ve URL bağlantısı (slug) zorunludur.');
+      return;
+    }
+
+    if (!editingBlog?.summary?.trim()) {
+      setModalTab('content');
+      setModalError('Lütfen makale için kısa bir özet açıklama giriniz.');
       return;
     }
 
     setSaving(true);
-    let res;
-    if (editingBlog.id) {
-      res = await blogService.update(editingBlog.id, editingBlog);
-    } else {
-      res = await blogService.create(editingBlog);
-    }
+    const res = editingBlog.id
+      ? await blogService.update(editingBlog.id, editingBlog)
+      : await blogService.create(editingBlog);
     setSaving(false);
 
     if (res.isSuccess) {
       setIsModalOpen(false);
       loadBlogs();
     } else {
-      alert(res.message || 'Kayıt sırasında hata oluştu.');
+      setModalError(res.message || 'Kayıt sırasında bir hata oluştu.');
     }
   };
 
@@ -160,12 +204,12 @@ export default function AdminBlogsPage() {
       </div>
 
       {/* Search Bar & Status Filter Pills */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center justify-between">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
           <input
             type="text"
-            placeholder="Makale başlığı veya slug ile ara..."
+            placeholder="Makale başlığı veya URL ile ara..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
@@ -211,11 +255,23 @@ export default function AdminBlogsPage() {
       </div>
 
       {/* Blogs Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Makaleler yükleniyor...</span>
+          <div className="p-4 space-y-3 animate-pulse">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-4 px-2 py-2 border-b border-slate-100 last:border-0"
+              >
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 shrink-0" />
+                  <div className="h-3.5 w-52 bg-slate-200 rounded-md" />
+                </div>
+                <div className="h-3.5 w-32 bg-slate-100 rounded-md hidden sm:block" />
+                <div className="h-5 w-16 bg-slate-100 rounded-full" />
+                <div className="h-6 w-20 bg-slate-100 rounded-lg" />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -223,7 +279,7 @@ export default function AdminBlogsPage() {
               <thead className="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-200/70">
                 <tr>
                   <th className="py-3 px-4">Makale Başlığı</th>
-                  <th className="py-3 px-4">URL Slug</th>
+                  <th className="py-3 px-4">URL Bağlantısı</th>
                   <th className="py-3 px-4">Yazar</th>
                   <th className="py-3 px-4">Yayın Tarihi</th>
                   <th className="py-3 px-4">Durum</th>
@@ -257,8 +313,10 @@ export default function AdminBlogsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-500">
-                        /blog/{b.slug}
+                      <td className="py-3 px-4">
+                        <span className="inline-block px-2.5 py-1 rounded-md bg-slate-100/80 text-slate-700 text-xs font-medium">
+                          /blog/{b.slug}
+                        </span>
                       </td>
                       <td className="py-3 px-4 text-slate-600">{b.author}</td>
                       <td className="py-3 px-4 text-slate-500 tabular-nums whitespace-nowrap">
@@ -337,154 +395,321 @@ export default function AdminBlogsPage() {
         )}
       </div>
 
-      {/* Edit / Create Modal */}
-      {isModalOpen && editingBlog && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-10 shadow-2xl space-y-6 my-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl">
-                  <BookOpen className="w-6 h-6" />
+      {/* Modern Tabbed Modal with Sticky Header & Sticky Footer */}
+      <AnimatePresence>
+        {isModalOpen && editingBlog && (
+          <m.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setIsModalOpen(false)}
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+          >
+            <m.form
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              onSubmit={handleSave}
+              className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200/90 overflow-hidden"
+            >
+              {/* Sticky Header */}
+              <div className="px-6 py-4 bg-white border-b border-slate-200/80 shrink-0 space-y-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl shrink-0">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-base sm:text-lg font-heading font-bold tracking-tight text-slate-900 truncate">
+                        {editingBlog.id
+                          ? `Düzenle: ${editingBlog.title || 'Makale'}`
+                          : 'Yeni Makale Yaz'}
+                      </h2>
+                      <p className="text-xs text-slate-500 truncate">
+                        Akademik blog içeriği ve Google SERP önizlemesi
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {editingBlog.id && editingBlog.slug && (
+                      <Link
+                        href={`/blog/${editingBlog.slug}`}
+                        target="_blank"
+                        className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition"
+                      >
+                        <span>Canlıda Gör</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(false)}
+                      className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition"
+                      aria-label="Kapat"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-heading font-bold tracking-tight text-slate-900">
-                    {editingBlog.id ? 'Makaleyi Düzenle' : 'Yeni Makale Yaz'}
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Akademik blog yazısı ve SERP önizlemesi
-                  </p>
+
+                {/* 2-Tab Navigation with Sliding Pill */}
+                <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl text-xs">
+                  {(
+                    [
+                      {
+                        id: 'content',
+                        label: 'İçerik & Görsel',
+                        icon: FileText,
+                      },
+                      {
+                        id: 'seo',
+                        label: 'SEO & Google Önizleme',
+                        icon: Globe,
+                      },
+                    ] as const
+                  ).map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = modalTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setModalTab(tab.id)}
+                        className={`relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-semibold transition-colors ${
+                          isActive
+                            ? 'text-slate-900'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {isActive && (
+                          <m.div
+                            layoutId="blogModalTab"
+                            transition={{
+                              type: 'spring',
+                              stiffness: 420,
+                              damping: 32,
+                            }}
+                            className="absolute inset-0 rounded-lg bg-white shadow-xs"
+                          />
+                        )}
+                        <Icon className="relative z-10 w-3.5 h-3.5" />
+                        <span className="relative z-10">{tab.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <form onSubmit={handleSave} className="space-y-6 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Makale Başlığı <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingBlog.title || ''}
-                    onChange={(e) =>
-                      setEditingBlog({
-                        ...editingBlog,
-                        title: e.target.value,
-                        slug:
-                          editingBlog.slug ||
-                          e.target.value
-                            .toLowerCase()
-                            .replace(/[^a-z0-9ğüşıöç]/g, '-')
-                            .replace(/-+/g, '-'),
-                      })
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs bg-slate-50/50">
+                {modalError && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs font-medium">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{modalError}</span>
+                  </div>
+                )}
+
+                {modalTab === 'content' && (
+                  <div className="space-y-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Makale Başlığı <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editingBlog.title || ''}
+                          onChange={(e) => {
+                            const nextTitle = e.target.value;
+                            setEditingBlog({
+                              ...editingBlog,
+                              title: nextTitle,
+                              slug: slugManuallyEdited
+                                ? editingBlog.slug
+                                : slugifyTurkish(nextTitle),
+                            });
+                          }}
+                          placeholder="Örn: Güneş Lekeleri ve Melazmadan Korunma"
+                          className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          URL Bağlantısı (Slug){' '}
+                          <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editingBlog.slug || ''}
+                          onChange={(e) => {
+                            setSlugManuallyEdited(true);
+                            setEditingBlog({
+                              ...editingBlog,
+                              slug: slugifyTurkish(e.target.value),
+                            });
+                          }}
+                          placeholder="gunes-lekeleri-ve-melazma"
+                          className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Yazar
+                        </label>
+                        <input
+                          type="text"
+                          value={editingBlog.author || ''}
+                          onChange={(e) =>
+                            setEditingBlog({
+                              ...editingBlog,
+                              author: e.target.value,
+                            })
+                          }
+                          className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="pt-5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingBlog({
+                              ...editingBlog,
+                              isPublished: !editingBlog.isPublished,
+                            })
+                          }
+                          className="inline-flex items-center gap-2.5 focus:outline-none"
+                        >
+                          <span
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                              editingBlog.isPublished
+                                ? 'bg-emerald-600'
+                                : 'bg-slate-300'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${
+                                editingBlog.isPublished
+                                  ? 'translate-x-5'
+                                  : 'translate-x-0'
+                              }`}
+                            />
+                          </span>
+                          <span className="font-semibold text-slate-700 text-xs">
+                            {editingBlog.isPublished
+                              ? 'Yayında (Aktif)'
+                              : 'Taslak (Gizli)'}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <ImageUpload
+                      label="Makale Kapak Görseli"
+                      description="Blog listesinde ve makale detay sayfasında gösterilecek kapak görseli"
+                      folder="blogs"
+                      value={editingBlog.coverImageUrl || ''}
+                      onChange={(url) =>
+                        setEditingBlog({ ...editingBlog, coverImageUrl: url })
+                      }
+                    />
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Kısa Özet <span className="text-rose-500">*</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        required
+                        value={editingBlog.summary || ''}
+                        onChange={(e) =>
+                          setEditingBlog({
+                            ...editingBlog,
+                            summary: e.target.value,
+                          })
+                        }
+                        placeholder="Makale kartlarında gösterilecek kısa özet..."
+                        className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 resize-none"
+                      />
+                    </div>
+
+                    <SectionContentEditor
+                      label="Makale İçeriği"
+                      value={editingBlog.htmlContent || ''}
+                      onChange={(html) =>
+                        setEditingBlog({
+                          ...editingBlog,
+                          htmlContent: html,
+                        })
+                      }
+                    />
+                  </div>
+                )}
+
+                {modalTab === 'seo' && (
+                  <SeoMetaBox
+                    seo={
+                      editingBlog.seo || {
+                        metaTitle: '',
+                        metaDescription: '',
+                        focusKeywords: [],
+                        noIndex: false,
+                        schemaType: 'MedicalScholarlyArticle',
+                      }
                     }
-                    placeholder="Örn: Güneş Lekeleri ve Melazmadan Korunma"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    URL Slug <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingBlog.slug || ''}
-                    onChange={(e) =>
-                      setEditingBlog({ ...editingBlog, slug: e.target.value })
+                    slug={`blog/${editingBlog.slug || ''}`}
+                    defaultTitle={editingBlog.title || ''}
+                    onChange={(seo: SeoMetadata) =>
+                      setEditingBlog({ ...editingBlog, seo })
                     }
-                    placeholder="gunes-lekeleri-ve-melazma"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none font-mono"
                   />
+                )}
+              </div>
+
+              {/* Sticky Footer */}
+              <div className="px-6 py-4 bg-white border-t border-slate-200/80 shrink-0 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-[11px] text-slate-500 font-medium tabular-nums">
+                  SEO Başlığı:{' '}
+                  {(
+                    editingBlog.seo?.metaTitle ||
+                    editingBlog.title ||
+                    ''
+                  ).length}
+                  /60 karakter
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold transition"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-sm transition"
+                  >
+                    {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>{saving ? 'Kaydediliyor...' : 'Makaleyi Kaydet'}</span>
+                  </button>
                 </div>
               </div>
-
-              <ImageUpload
-                label="Makale Kapak Görseli (CoverImageUrl)"
-                description="Blog listesinde ve makale detay sayfasında gösterilecek kapak görseli"
-                folder="blogs"
-                value={editingBlog.coverImageUrl || ''}
-                onChange={(url) =>
-                  setEditingBlog({ ...editingBlog, coverImageUrl: url })
-                }
-              />
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Özet Açıklama
-                </label>
-                <textarea
-                  rows={2}
-                  value={editingBlog.summary || ''}
-                  onChange={(e) =>
-                    setEditingBlog({ ...editingBlog, summary: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  İçerik (HTML)
-                </label>
-                <textarea
-                  rows={8}
-                  value={editingBlog.htmlContent || ''}
-                  onChange={(e) =>
-                    setEditingBlog({
-                      ...editingBlog,
-                      htmlContent: e.target.value,
-                    })
-                  }
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <SeoMetaBox
-                seo={
-                  editingBlog.seo || {
-                    metaTitle: '',
-                    metaDescription: '',
-                    focusKeywords: [],
-                    noIndex: false,
-                    schemaType: 'MedicalScholarlyArticle',
-                  }
-                }
-                slug={`blog/${editingBlog.slug || ''}`}
-                defaultTitle={editingBlog.title || ''}
-                onChange={(seo: SeoMetadata) =>
-                  setEditingBlog({ ...editingBlog, seo })
-                }
-              />
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-semibold"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl font-semibold transition"
-                >
-                  {saving ? 'Kaydediliyor...' : 'Makaleyi Kaydet'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </m.form>
+          </m.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

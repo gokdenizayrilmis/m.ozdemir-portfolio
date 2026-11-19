@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AnimatePresence, m } from 'motion/react';
 import { authService, settingsService } from '@/services';
 import { SiteSettings } from '@/types';
 import { SETTINGS_SUB_ITEMS } from '@/components/admin/AdminSidebar';
@@ -150,8 +151,8 @@ function AdminSettingsContent() {
           </p>
         </div>
 
-        {/* Segmented Tabs synced with URL ?tab=... and Sidebar Dropdown */}
-        <div className="inline-flex items-center bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs text-xs">
+        {/* Animated Segmented Tabs (layoutId) synced with URL ?tab=... and Sidebar */}
+        <div className="inline-flex items-center bg-white p-1 rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] text-xs">
           {SETTINGS_SUB_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.tab;
@@ -160,14 +161,25 @@ function AdminSettingsContent() {
                 key={item.tab}
                 type="button"
                 onClick={() => handleTabChange(item.tab)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold transition ${
+                className={`relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg font-semibold transition-colors ${
                   isActive
-                    ? 'bg-slate-900 text-white shadow-xs'
+                    ? 'text-white'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{item.title}</span>
+                {isActive && (
+                  <m.div
+                    layoutId="settingsTabPill"
+                    transition={{
+                      type: 'spring',
+                      stiffness: 420,
+                      damping: 32,
+                    }}
+                    className="absolute inset-0 rounded-lg bg-slate-900 shadow-xs"
+                  />
+                )}
+                <Icon className="relative z-10 w-3.5 h-3.5" />
+                <span className="relative z-10">{item.title}</span>
               </button>
             );
           })}
@@ -185,6 +197,14 @@ function AdminSettingsContent() {
         </div>
       )}
 
+      <AnimatePresence mode="wait">
+        <m.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        >
       {/* TAB 1: İLETİŞİM & KONUM */}
       {activeTab === 'contact' && (
         <form onSubmit={handleSave} className="space-y-6 text-xs">
@@ -589,6 +609,8 @@ function AdminSettingsContent() {
           </div>
         </div>
       )}
+        </m.div>
+      </AnimatePresence>
     </div>
   );
 }
