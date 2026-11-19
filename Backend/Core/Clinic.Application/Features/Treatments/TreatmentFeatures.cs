@@ -246,3 +246,44 @@ public class DeleteTreatmentCommandHandler : IRequestHandler<DeleteTreatmentComm
     }
 }
 
+// 6. ToggleTreatmentPublishCommand
+public record ToggleTreatmentPublishCommand(string Id) : IRequest<Result<Treatment>>;
+
+public class ToggleTreatmentPublishCommandHandler : IRequestHandler<ToggleTreatmentPublishCommand, Result<Treatment>>
+{
+    private readonly ITreatmentRepository _repository;
+    private readonly INextJsRevalidationService _revalidationService;
+
+    public ToggleTreatmentPublishCommandHandler(
+        ITreatmentRepository repository,
+        INextJsRevalidationService revalidationService)
+    {
+        _repository = repository;
+        _revalidationService = revalidationService;
+    }
+
+    public async Task<Result<Treatment>> Handle(ToggleTreatmentPublishCommand request, CancellationToken cancellationToken)
+    {
+        var existing = await _repository.GetByIdAsync(request.Id, cancellationToken);
+        if (existing is null)
+        {
+            return Result<Treatment>.Failure("Durumu değiştirilecek tedavi kaydı bulunamadı.");
+        }
+
+        existing.IsPublished = !existing.IsPublished;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await _repository.UpdateAsync(existing, cancellationToken);
+        await _revalidationService.RevalidatePathsAsync(
+            new[] { "/", $"/{existing.Slug}", $"/kategori/{existing.CategorySlug}" },
+            cancellationToken);
+
+        var statusMsg = existing.IsPublished
+            ? "Tedavi sayfası yayına alındı."
+            : "Tedavi sayfası taslağa çekildi (gizlendi).";
+
+        return Result<Treatment>.Success(existing, statusMsg);
+    }
+}
+
+

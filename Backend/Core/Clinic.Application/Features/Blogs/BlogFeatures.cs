@@ -235,3 +235,44 @@ public class DeleteBlogCommandHandler : IRequestHandler<DeleteBlogCommand, Resul
     }
 }
 
+// 6. ToggleBlogPublishCommand
+public record ToggleBlogPublishCommand(string Id) : IRequest<Result<BlogPost>>;
+
+public class ToggleBlogPublishCommandHandler : IRequestHandler<ToggleBlogPublishCommand, Result<BlogPost>>
+{
+    private readonly IBlogPostRepository _repository;
+    private readonly INextJsRevalidationService _revalidationService;
+
+    public ToggleBlogPublishCommandHandler(
+        IBlogPostRepository repository,
+        INextJsRevalidationService revalidationService)
+    {
+        _repository = repository;
+        _revalidationService = revalidationService;
+    }
+
+    public async Task<Result<BlogPost>> Handle(ToggleBlogPublishCommand request, CancellationToken cancellationToken)
+    {
+        var existing = await _repository.GetByIdAsync(request.Id, cancellationToken);
+        if (existing is null)
+        {
+            return Result<BlogPost>.Failure("Durumu değiştirilecek blog yazısı bulunamadı.");
+        }
+
+        existing.IsPublished = !existing.IsPublished;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        await _repository.UpdateAsync(existing, cancellationToken);
+        await _revalidationService.RevalidatePathsAsync(
+            new[] { "/", "/blog", $"/blog/{existing.Slug}" },
+            cancellationToken);
+
+        var statusMsg = existing.IsPublished
+            ? "Makale yayına alındı."
+            : "Makale taslağa çekildi (gizlendi).";
+
+        return Result<BlogPost>.Success(existing, statusMsg);
+    }
+}
+
+

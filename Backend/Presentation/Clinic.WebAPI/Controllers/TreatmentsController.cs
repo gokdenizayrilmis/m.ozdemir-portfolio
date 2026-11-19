@@ -45,6 +45,14 @@ public class TreatmentsController : BaseApiController
     }
 
     [Authorize]
+    [HttpPatch("{id}/toggle-publish")]
+    public async Task<IActionResult> TogglePublish(string id, CancellationToken cancellationToken = default)
+    {
+        var result = await Mediator.Send(new ToggleTreatmentPublishCommand(id), cancellationToken);
+        return OkOrNotFound(result);
+    }
+
+    [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken = default)
     {
