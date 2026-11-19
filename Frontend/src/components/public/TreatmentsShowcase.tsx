@@ -20,9 +20,11 @@ export default function TreatmentsShowcase({
 
   const sortedTreatments = useMemo(
     () =>
-      [...treatments].sort(
-        (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
-      ),
+      [...treatments].sort((a, b) => {
+        const orderDiff = (a.displayOrder || 0) - (b.displayOrder || 0);
+        if (orderDiff !== 0) return orderDiff;
+        return a.title.localeCompare(b.title, 'tr');
+      }),
     [treatments]
   );
 

@@ -12,6 +12,7 @@ import {
 import AnimatedCounter from '@/components/admin/AnimatedCounter';
 import ConversionTrendChart from '@/components/admin/ConversionTrendChart';
 import ChannelDistributionDonut from '@/components/admin/ChannelDistributionDonut';
+import { useAdminToast } from '@/components/admin/AdminToast';
 import {
   MessageCircle,
   Phone,
@@ -99,6 +100,7 @@ function ChangeBadge({
 }
 
 export default function AdminOverviewDashboard() {
+  const { showToast } = useAdminToast();
   const [range, setRange] = useState<LeadRangeFilter>('30d');
   const [channelType, setChannelType] = useState<string>('all');
   const [page, setPage] = useState<number>(1);
@@ -171,8 +173,10 @@ export default function AdminOverviewDashboard() {
     setExporting(true);
     const ok = await leadService.downloadCsv(range, channelType);
     setExporting(false);
-    if (!ok) {
-      alert('CSV raporu indirilirken bir hata oluştu.');
+    if (ok) {
+      showToast('CSV dönüşüm raporu indirildi.', 'success');
+    } else {
+      showToast('CSV raporu indirilirken bir hata oluştu.', 'error');
     }
   };
 

@@ -9,22 +9,25 @@ namespace Clinic.Application.Features.Treatments;
 
 internal static class TreatmentOrderHelper
 {
-    public static async Task<int> ReorderAndSaveSiblingsAsync(
+    public static async Task<int> ReorderAllTreatmentsAsync(
         ITreatmentRepository repository,
-        string categorySlug,
         Treatment? currentTreatment,
         int requestedOrder,
         CancellationToken cancellationToken)
     {
-        var allInCategory = await repository.GetAllAsync(categorySlug, onlyPublished: false, cancellationToken);
-        var others = currentTreatment is null
-            ? allInCategory
-            : allInCategory.Where(t => t.Id != currentTreatment.Id).ToList();
+        var allTreatments = await repository.GetAllAsync(null, onlyPublished: false, cancellationToken);
+        var others = (currentTreatment is null
+            ? allTreatments
+            : allTreatments.Where(t => t.Id != currentTreatment.Id))
+            .OrderBy(t => t.DisplayOrder > 0 ? t.DisplayOrder : int.MaxValue)
+            .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         var maxOrder = currentTreatment is null ? others.Count : others.Count + 1;
+        var effectiveRequested = requestedOrder > 0 ? requestedOrder : maxOrder;
         var clampedOrder = currentTreatment is null
             ? 0
-            : Math.Clamp(requestedOrder, 1, Math.Max(1, maxOrder));
+            : Math.Clamp(effectiveRequested, 1, Math.Max(1, maxOrder));
 
         var ordered = new List<Treatment>(others);
         if (currentTreatment is not null)
@@ -168,9 +171,8 @@ public class CreateTreatmentCommandHandler : IRequestHandler<CreateTreatmentComm
         };
 
         await _repository.CreateAsync(treatment, cancellationToken);
-        treatment.DisplayOrder = await TreatmentOrderHelper.ReorderAndSaveSiblingsAsync(
+        treatment.DisplayOrder = await TreatmentOrderHelper.ReorderAllTreatmentsAsync(
             _repository,
-            normalizedCategorySlug,
             treatment,
             request.DisplayOrder,
             cancellationToken);
@@ -251,24 +253,13 @@ public class UpdateTreatmentCommandHandler : IRequestHandler<UpdateTreatmentComm
         existing.Seo = request.Seo ?? existing.Seo;
         existing.UpdatedAt = DateTime.UtcNow;
 
-        existing.DisplayOrder = await TreatmentOrderHelper.ReorderAndSaveSiblingsAsync(
+        existing.DisplayOrder = await TreatmentOrderHelper.ReorderAllTreatmentsAsync(
             _repository,
-            newCategorySlug,
             existing,
             request.DisplayOrder,
             cancellationToken);
 
         await _repository.UpdateAsync(existing, cancellationToken);
-
-        if (!string.Equals(oldCategorySlug, newCategorySlug, StringComparison.OrdinalIgnoreCase))
-        {
-            await TreatmentOrderHelper.ReorderAndSaveSiblingsAsync(
-                _repository,
-                oldCategorySlug,
-                null,
-                0,
-                cancellationToken);
-        }
 
         await _revalidationService.RevalidatePathsAsync(
             new[] { "/", $"/{oldSlug}", $"/{existing.Slug}", $"/kategori/{oldCategorySlug}", $"/kategori/{existing.CategorySlug}" },
@@ -306,9 +297,8 @@ public class DeleteTreatmentCommandHandler : IRequestHandler<DeleteTreatmentComm
         }
 
         await _repository.DeleteAsync(request.Id, cancellationToken);
-        await TreatmentOrderHelper.ReorderAndSaveSiblingsAsync(
+        await TreatmentOrderHelper.ReorderAllTreatmentsAsync(
             _repository,
-            existing.CategorySlug,
             null,
             0,
             cancellationToken);
@@ -366,5 +356,3 @@ public class ToggleTreatmentPublishCommandHandler : IRequestHandler<ToggleTreatm
         return Result<Treatment>.Success(existing, statusMsg);
     }
 }
-
-

@@ -9,6 +9,7 @@ import SeoMetaBox from '@/components/admin/SeoMetaBox';
 import FaqListEditor from '@/components/admin/FaqListEditor';
 import ImageUpload from '@/components/admin/ImageUpload';
 import SectionContentEditor from '@/components/admin/SectionContentEditor';
+import { useAdminToast } from '@/components/admin/AdminToast';
 import { resolveMediaUrl } from '@/utils/cn';
 import { slugifyTurkish } from '@/utils/slug';
 import {
@@ -31,6 +32,7 @@ import {
 type ModalTab = 'content' | 'faqs' | 'seo';
 
 export default function AdminTreatmentsPage() {
+  const { showToast } = useAdminToast();
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,10 +52,6 @@ export default function AdminTreatmentsPage() {
   const [orderWarning, setOrderWarning] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<{
-    text: string;
-    type: 'success' | 'error';
-  } | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -81,16 +79,14 @@ export default function AdminTreatmentsPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen]);
 
-  const getMaxOrderForCategory = (catSlug: string, excludeId?: string) => {
-    const othersCount = treatments.filter(
-      (t) => t.categorySlug === catSlug && t.id !== excludeId
-    ).length;
+  const getMaxOrder = (excludeId?: string) => {
+    const othersCount = treatments.filter((t) => t.id !== excludeId).length;
     return othersCount + 1;
   };
 
   const handleOpenCreate = () => {
     const defaultCategorySlug = categories[0]?.slug || 'dermatoloji';
-    const nextOrder = getMaxOrderForCategory(defaultCategorySlug);
+    const nextOrder = getMaxOrder();
     setModalError(null);
     setOrderWarning(null);
     setModalTab('content');
@@ -159,12 +155,12 @@ export default function AdminTreatmentsPage() {
     setSaving(false);
 
     if (res.isSuccess) {
-      setStatusMessage({
-        text: editingTreatment.id
+      showToast(
+        editingTreatment.id
           ? 'Tedavi başarıyla güncellendi.'
           : 'Yeni tedavi başarıyla eklendi.',
-        type: 'success',
-      });
+        'success'
+      );
       setIsModalOpen(false);
       loadData();
     } else {
@@ -181,12 +177,9 @@ export default function AdminTreatmentsPage() {
       setTreatments((prev) =>
         prev.map((item) => (item.id === t.id ? res.data! : item))
       );
-      setStatusMessage({
-        text: res.message || 'Yayın durumu güncellendi.',
-        type: 'success',
-      });
+      showToast(res.message || 'Yayın durumu güncellendi.', 'success');
     } else {
-      alert(res.message || 'Yayın durumu değiştirilemedi.');
+      showToast(res.message || 'Yayın durumu değiştirilemedi.', 'error');
     }
   };
 
@@ -196,27 +189,34 @@ export default function AdminTreatmentsPage() {
 
     const res = await treatmentService.delete(id);
     if (res.isSuccess) {
+      showToast(`'${title}' tedavisi silindi.`, 'success');
       loadData();
     } else {
-      alert(res.message || 'Silme işlemi başarısız.');
+      showToast(res.message || 'Silme işlemi başarısız.', 'error');
     }
   };
 
   const publishedCount = treatments.filter((t) => t.isPublished).length;
   const draftCount = treatments.length - publishedCount;
 
-  const filtered = treatments.filter((t) => {
-    const matchesSearch =
-      t.title.toLowerCase().includes(search.toLowerCase()) ||
-      t.slug.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory =
-      !categoryFilter || t.categorySlug === categoryFilter;
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'published' && t.isPublished) ||
-      (statusFilter === 'draft' && !t.isPublished);
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  const filtered = treatments
+    .filter((t) => {
+      const matchesSearch =
+        t.title.toLowerCase().includes(search.toLowerCase()) ||
+        t.slug.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory =
+        !categoryFilter || t.categorySlug === categoryFilter;
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'published' && t.isPublished) ||
+        (statusFilter === 'draft' && !t.isPublished);
+      return matchesSearch && matchesCategory && matchesStatus;
+    })
+    .sort((a, b) => {
+      const orderDiff = (a.displayOrder || 0) - (b.displayOrder || 0);
+      if (orderDiff !== 0) return orderDiff;
+      return a.title.localeCompare(b.title, 'tr');
+    });
 
   return (
     <div className="space-y-6">
@@ -242,15 +242,6 @@ export default function AdminTreatmentsPage() {
           <span>Yeni Tedavi Ekle</span>
         </button>
       </div>
-
-      {statusMessage && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center justify-between">
-          <span>{statusMessage.text}</span>
-          <button onClick={() => setStatusMessage(null)}>
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
 
       {/* Filter, Status Pills and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.04)] flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between">
@@ -343,6 +334,7 @@ export default function AdminTreatmentsPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-200/70">
                 <tr>
+                  <th className="py-3 px-4 w-14">Sıra</th>
                   <th className="py-3 px-4">Tedavi Başlığı</th>
                   <th className="py-3 px-4">URL Bağlantısı</th>
                   <th className="py-3 px-4">Kategori</th>
@@ -352,13 +344,19 @@ export default function AdminTreatmentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((t) => {
+                {filtered.map((t, idx) => {
                   const thumbUrl = resolveMediaUrl(t.coverImageUrl);
+                  const displayNum = t.displayOrder || idx + 1;
                   return (
                     <tr
                       key={t.id}
                       className="hover:bg-slate-50/80 transition-colors"
                     >
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs tabular-nums">
+                          {displayNum}
+                        </span>
+                      </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           {thumbUrl ? (
@@ -649,21 +647,10 @@ export default function AdminTreatmentsPage() {
                             const selected = categories.find(
                               (c) => c.slug === nextCatSlug
                             );
-                            const nextMax = getMaxOrderForCategory(
-                              nextCatSlug,
-                              editingTreatment.id
-                            );
-                            setOrderWarning(null);
                             setEditingTreatment({
                               ...editingTreatment,
                               categorySlug: nextCatSlug,
                               categoryId: selected?.id || '',
-                              displayOrder: !editingTreatment.id
-                                ? nextMax
-                                : Math.min(
-                                    editingTreatment.displayOrder || nextMax,
-                                    nextMax
-                                  ),
                             });
                           }}
                           className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
@@ -678,10 +665,7 @@ export default function AdminTreatmentsPage() {
 
                       <div>
                         {(() => {
-                          const maxOrder = getMaxOrderForCategory(
-                            editingTreatment.categorySlug || 'dermatoloji',
-                            editingTreatment.id
-                          );
+                          const maxOrder = getMaxOrder(editingTreatment.id);
                           return (
                             <>
                               <div className="flex items-center justify-between mb-1">
@@ -710,16 +694,14 @@ export default function AdminTreatmentsPage() {
 
                                   if (raw > maxOrder) {
                                     setOrderWarning(
-                                      `Bu kategoride en fazla ${maxOrder}. sıra seçilebilir; ${maxOrder} olarak ayarlandı.`
+                                      `En fazla ${maxOrder}. sıra seçilebilir; ${maxOrder} olarak ayarlandı.`
                                     );
                                     setEditingTreatment({
                                       ...editingTreatment,
                                       displayOrder: maxOrder,
                                     });
                                   } else if (raw < 1) {
-                                    setOrderWarning(
-                                      'Gösterim sırası 1’den küçük olamaz.'
-                                    );
+                                    setOrderWarning('En az 1 olabilir.');
                                     setEditingTreatment({
                                       ...editingTreatment,
                                       displayOrder: 1,

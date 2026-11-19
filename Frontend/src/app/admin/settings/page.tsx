@@ -6,6 +6,7 @@ import { AnimatePresence, m } from 'motion/react';
 import { authService, settingsService } from '@/services';
 import { SiteSettings } from '@/types';
 import { SETTINGS_SUB_ITEMS } from '@/components/admin/AdminSidebar';
+import { useAdminToast } from '@/components/admin/AdminToast';
 import {
   Save,
   Loader2,
@@ -20,12 +21,12 @@ import {
 function AdminSettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showToast } = useAdminToast();
   const activeTab = searchParams.get('tab') || 'contact';
 
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   // Password Change State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -56,16 +57,16 @@ function AdminSettingsContent() {
     if (!settings) return;
 
     setSaving(true);
-    setSaved(false);
-
     const res = await settingsService.updateSettings(settings);
     setSaving(false);
 
     if (res.isSuccess) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3500);
+      showToast(
+        'Klinik ayarları kaydedildi ve önbellek yenilendi.',
+        'success'
+      );
     } else {
-      alert(res.message || 'Ayarlar kaydedilemedi.');
+      showToast(res.message || 'Ayarlar kaydedilemedi.', 'error');
     }
   };
 
@@ -105,12 +106,10 @@ function AdminSettingsContent() {
     setChangingPassword(false);
 
     if (res.isSuccess) {
-      setPasswordStatus({
-        type: 'success',
-        message:
-          res.message ||
-          'Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapmanız için yönlendiriliyorsunuz...',
-      });
+      showToast(
+        'Şifreniz güncellendi. Giriş sayfasına yönlendiriliyorsunuz...',
+        'success'
+      );
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -122,6 +121,7 @@ function AdminSettingsContent() {
         type: 'error',
         message: res.message || 'Şifre değiştirilirken bir hata oluştu.',
       });
+      showToast(res.message || 'Şifre değiştirilemedi.', 'error');
     }
   };
 
@@ -185,17 +185,6 @@ function AdminSettingsContent() {
           })}
         </div>
       </div>
-
-      {/* Toast Notification on Save */}
-      {saved && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs flex items-center gap-2 shadow-xs">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <span className="font-semibold">
-            Değişiklikler başarıyla kaydedildi ve Next.js ISR önbelleği
-            yenilendi!
-          </span>
-        </div>
-      )}
 
       <AnimatePresence mode="wait">
         <m.div

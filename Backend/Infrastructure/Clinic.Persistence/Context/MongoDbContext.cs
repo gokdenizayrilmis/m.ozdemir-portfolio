@@ -56,7 +56,13 @@ public class MongoDbContext
                 BsonClassMap.RegisterClassMap<Category>(cm => cm.AutoMap());
 
             if (!BsonClassMap.IsClassMapRegistered(typeof(Treatment)))
-                BsonClassMap.RegisterClassMap<Treatment>(cm => cm.AutoMap());
+            {
+                BsonClassMap.RegisterClassMap<Treatment>(cm =>
+                {
+                    cm.AutoMap();
+                    cm.SetIgnoreExtraElements(true);
+                });
+            }
 
             if (!BsonClassMap.IsClassMapRegistered(typeof(BlogPost)))
                 BsonClassMap.RegisterClassMap<BlogPost>(cm => cm.AutoMap());

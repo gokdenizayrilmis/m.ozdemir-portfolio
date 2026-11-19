@@ -8,6 +8,7 @@ import { BlogPost, SeoMetadata } from '@/types';
 import SeoMetaBox from '@/components/admin/SeoMetaBox';
 import ImageUpload from '@/components/admin/ImageUpload';
 import SectionContentEditor from '@/components/admin/SectionContentEditor';
+import { useAdminToast } from '@/components/admin/AdminToast';
 import { resolveMediaUrl } from '@/utils/cn';
 import { slugifyTurkish } from '@/utils/slug';
 import {
@@ -29,6 +30,7 @@ import {
 type BlogModalTab = 'content' | 'seo';
 
 export default function AdminBlogsPage() {
+  const { showToast } = useAdminToast();
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -132,6 +134,12 @@ export default function AdminBlogsPage() {
     setSaving(false);
 
     if (res.isSuccess) {
+      showToast(
+        editingBlog.id
+          ? 'Makale başarıyla güncellendi.'
+          : 'Yeni makale başarıyla eklendi.',
+        'success'
+      );
       setIsModalOpen(false);
       loadBlogs();
     } else {
@@ -148,8 +156,9 @@ export default function AdminBlogsPage() {
       setBlogs((prev) =>
         prev.map((item) => (item.id === b.id ? res.data! : item))
       );
+      showToast(res.message || 'Makale yayın durumu güncellendi.', 'success');
     } else {
-      alert(res.message || 'Yayın durumu değiştirilemedi.');
+      showToast(res.message || 'Yayın durumu değiştirilemedi.', 'error');
     }
   };
 
@@ -159,9 +168,10 @@ export default function AdminBlogsPage() {
 
     const res = await blogService.delete(id);
     if (res.isSuccess) {
+      showToast(`'${title}' makalesi silindi.`, 'success');
       loadBlogs();
     } else {
-      alert(res.message || 'Silme işlemi başarısız.');
+      showToast(res.message || 'Silme işlemi başarısız.', 'error');
     }
   };
 
