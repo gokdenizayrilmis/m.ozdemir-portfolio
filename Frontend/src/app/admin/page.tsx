@@ -122,10 +122,10 @@ export default function AdminOverviewDashboard() {
       {/* Header + Date Range Picker & CSV Export */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-amber-700">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-amber-600">
             Google Ads &amp; Klinik Dönüşüm Kokpiti
           </span>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold tracking-tight text-slate-900 mt-1">
             Dönüşüm &amp; Hasta Trafik Raporu
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
@@ -177,7 +177,7 @@ export default function AdminOverviewDashboard() {
             <span className="text-xs font-medium text-slate-500">
               Toplam Hasta Dönüşümü
             </span>
-            <h3 className="text-3xl font-bold text-slate-900 mt-1">
+            <h3 className="text-3xl font-heading font-bold tracking-tight tabular-nums text-slate-900 mt-1">
               {loadingSummary ? '...' : summary.totalClicks}
             </h3>
             <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1 mt-1.5">
@@ -195,7 +195,7 @@ export default function AdminOverviewDashboard() {
             <span className="text-xs font-medium text-slate-500">
               WhatsApp Tıklamaları
             </span>
-            <h3 className="text-3xl font-bold text-emerald-600 mt-1">
+            <h3 className="text-3xl font-heading font-bold tracking-tight tabular-nums text-emerald-600 mt-1">
               {loadingSummary ? '...' : summary.whatsAppClicks}
             </h3>
             <span className="text-[11px] text-slate-400 mt-1.5 block">
@@ -212,7 +212,7 @@ export default function AdminOverviewDashboard() {
             <span className="text-xs font-medium text-slate-500">
               Telefon Aramaları
             </span>
-            <h3 className="text-3xl font-bold text-indigo-600 mt-1">
+            <h3 className="text-3xl font-heading font-bold tracking-tight tabular-nums text-indigo-600 mt-1">
               {loadingSummary ? '...' : summary.phoneClicks}
             </h3>
             <span className="text-[11px] text-slate-400 mt-1.5 block">
@@ -231,7 +231,7 @@ export default function AdminOverviewDashboard() {
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2">
             <Layers className="w-5 h-5 text-amber-700" />
-            <h3 className="font-serif font-bold text-slate-900 text-base">
+            <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base">
               Google Ads Kampanya Performansı
             </h3>
           </div>
@@ -255,7 +255,7 @@ export default function AdminOverviewDashboard() {
                   <span className="font-medium text-slate-800 truncate">
                     {item.campaign}
                   </span>
-                  <span className="shrink-0 font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
+                  <span className="shrink-0 font-bold tabular-nums text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
                     {item.count} Dönüşüm
                   </span>
                 </div>
@@ -268,7 +268,7 @@ export default function AdminOverviewDashboard() {
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-emerald-700" />
-            <h3 className="font-serif font-bold text-slate-900 text-base">
+            <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base">
               En Çok Hasta Getiren Sayfalar
             </h3>
           </div>
@@ -292,7 +292,7 @@ export default function AdminOverviewDashboard() {
                   <span className="font-mono font-medium text-slate-800 truncate max-w-xs">
                     {item.pageSlug}
                   </span>
-                  <span className="shrink-0 font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                  <span className="shrink-0 font-bold tabular-nums text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
                     {item.count} Tıklama
                   </span>
                 </div>
@@ -308,7 +308,7 @@ export default function AdminOverviewDashboard() {
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-slate-700" />
             <div>
-              <h3 className="font-serif font-bold text-slate-900 text-base">
+              <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base tabular-nums">
                 Dönüşüm &amp; Tıklama Kayıtları ({pagedLeads.totalCount})
               </h3>
             </div>
@@ -361,7 +361,7 @@ export default function AdminOverviewDashboard() {
                   const isWhatsApp = l.conversionType === 'WhatsAppClick';
                   return (
                     <tr key={l.id} className="hover:bg-slate-50/60">
-                      <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap tabular-nums">
                         {new Date(l.createdAt).toLocaleString('tr-TR')}
                       </td>
                       <td className="py-3.5 px-4">
@@ -408,7 +408,7 @@ export default function AdminOverviewDashboard() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 tabular-nums">
           <span>
             Sayfa <strong>{pagedLeads.page}</strong> /{' '}
             <strong>{totalPages}</strong> (Toplam {pagedLeads.totalCount} kayıt)

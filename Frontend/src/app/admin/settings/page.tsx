@@ -127,10 +127,10 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-8 max-w-4xl">
       <div>
-        <span className="text-xs font-bold uppercase tracking-widest text-amber-700">
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-amber-600">
           Genel Klinik Yapılandırması
         </span>
-        <h1 className="text-2xl font-serif font-bold text-slate-900 mt-1">
+        <h1 className="text-2xl font-heading font-bold tracking-tight text-slate-900 mt-1">
           Klinik &amp; İletişim Ayarları
         </h1>
         <p className="text-xs text-slate-500">
@@ -157,7 +157,7 @@ export default function AdminSettingsPage() {
               <ImageIcon className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-serif font-bold text-slate-900 text-base">
+              <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base">
                 Kurumsal Görseller &amp; Belgeler
               </h3>
               <p className="text-[11px] text-slate-500">
@@ -221,7 +221,7 @@ export default function AdminSettingsPage() {
 
         {/* Contact Info Card */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-4">
-          <h3 className="font-serif font-bold text-slate-900 text-base border-b border-slate-100 pb-3">
+          <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base border-b border-slate-100 pb-3">
             İletişim ve Adres Bilgileri
           </h3>
 
@@ -321,7 +321,7 @@ export default function AdminSettingsPage() {
 
         {/* Analytics & GTM ID Card */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-4">
-          <h3 className="font-serif font-bold text-slate-900 text-base border-b border-slate-100 pb-3">
+          <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base border-b border-slate-100 pb-3">
             Google Analytics &amp; Tag Manager (GTM) Entegrasyonu
           </h3>
 
@@ -366,7 +366,7 @@ export default function AdminSettingsPage() {
 
         {/* Doctor Bio Card */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-4">
-          <h3 className="font-serif font-bold text-slate-900 text-base border-b border-slate-100 pb-3">
+          <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base border-b border-slate-100 pb-3">
             Prof. Dr. Mustafa Özdemir Biyografi Metni
           </h3>
 
@@ -447,7 +447,7 @@ export default function AdminSettingsPage() {
             <KeyRound className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-serif font-bold text-slate-900 text-base">
+            <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base">
               Güvenlik &amp; Yönetici Şifresi Değiştir
             </h3>
             <p className="text-[11px] text-slate-500">

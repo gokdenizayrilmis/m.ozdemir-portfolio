@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
           <div className="w-12 h-12 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto">
             <Shield className="w-6 h-6" />
           </div>
-          <h1 className="text-xl font-serif font-bold text-white">
+          <h1 className="text-xl font-heading font-bold tracking-tight text-white">
             Klinik Yönetim Paneli (CMS)
           </h1>
           <p className="text-xs text-slate-400">

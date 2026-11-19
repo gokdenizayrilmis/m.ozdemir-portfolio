@@ -60,3 +60,15 @@ body {
   font-weight: 600;
 }
 
+/* Admin SaaS Dashboard Scoped Typography */
+.admin-shell {
+  font-family: var(--font-inter-admin), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.admin-shell h1,
+.admin-shell h2,
+.admin-shell h3,
+.admin-shell .font-heading {
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', var(--font-inter-admin), sans-serif;
+}
+

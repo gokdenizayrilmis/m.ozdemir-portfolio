@@ -109,11 +109,11 @@ export default function AdminBlogsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-amber-700">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-amber-600">
             Dermatoloji Rehberi
           </span>
-          <h1 className="text-2xl font-serif font-bold text-slate-900 mt-1">
-            Blog & Makale Yönetimi ({blogs.length})
+          <h1 className="text-2xl font-heading font-bold tracking-tight tabular-nums text-slate-900 mt-1">
+            Blog &amp; Makale Yönetimi ({blogs.length})
           </h1>
           <p className="text-xs text-slate-500">
             Prof. Dr. Mustafa Özdemir&apos;in bilimsel içeriklerini ve SEO meta
@@ -159,7 +159,7 @@ export default function AdminBlogsPage() {
                       /blog/{b.slug}
                     </td>
                     <td className="py-3.5 px-4 text-slate-600">{b.author}</td>
-                    <td className="py-3.5 px-4 text-slate-500">
+                    <td className="py-3.5 px-4 text-slate-500 tabular-nums">
                       {new Date(b.publishedAt).toLocaleDateString('tr-TR')}
                     </td>
                     <td className="py-3.5 px-4">
@@ -238,7 +238,7 @@ export default function AdminBlogsPage() {
                   <BookOpen className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-serif font-bold text-slate-900">
+                  <h2 className="text-lg font-heading font-bold tracking-tight text-slate-900">
                     {editingBlog.id ? 'Makaleyi Düzenle' : 'Yeni Makale Yaz'}
                   </h2>
                   <p className="text-xs text-slate-500">
