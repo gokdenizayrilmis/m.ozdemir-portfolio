@@ -69,6 +69,8 @@ export default function ContactActionButtons({
       <a
         href={telUrl}
         onClick={handlePhoneClick}
+        aria-label={`${callLabel}: ${phone}`}
+        title={`${callLabel}: ${phone}`}
         className={cn(CALL_BUTTON_BASE_CLASS, buttonSizeClass)}
       >
         <Phone className="w-4 h-4 shrink-0 text-white" />
@@ -81,6 +83,8 @@ export default function ContactActionButtons({
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleWhatsAppClick}
+        aria-label={whatsappLabel}
+        title={whatsappLabel}
         className={cn(WHATSAPP_BUTTON_BASE_CLASS, buttonSizeClass)}
       >
         <MessageCircle className="w-4 h-4 shrink-0 text-white" />

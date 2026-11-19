@@ -77,6 +77,7 @@ export default function FaqListEditor({ faqs, onChange }: FaqListEditorProps) {
                   type="button"
                   onClick={() => handleRemoveFaq(index)}
                   className="text-slate-400 hover:text-red-500 transition p-1"
+                  aria-label={`Soru ${index + 1} sil`}
                   title="Soruyu Sil"
                 >
                   <Trash2 className="w-4 h-4" />

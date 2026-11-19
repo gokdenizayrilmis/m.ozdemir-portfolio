@@ -18,7 +18,7 @@ export const FALLBACK_CATEGORIES: Category[] = [
       noIndex: false,
       schemaType: 'MedicalWebPage',
     },
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
   {
     id: 'cat-2',
@@ -35,7 +35,7 @@ export const FALLBACK_CATEGORIES: Category[] = [
       noIndex: false,
       schemaType: 'MedicalWebPage',
     },
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
   {
     id: 'cat-3',
@@ -51,7 +51,7 @@ export const FALLBACK_CATEGORIES: Category[] = [
       noIndex: false,
       schemaType: 'MedicalWebPage',
     },
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
   {
     id: 'cat-4',
@@ -68,7 +68,7 @@ export const FALLBACK_CATEGORIES: Category[] = [
       noIndex: false,
       schemaType: 'MedicalWebPage',
     },
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
 ];
 

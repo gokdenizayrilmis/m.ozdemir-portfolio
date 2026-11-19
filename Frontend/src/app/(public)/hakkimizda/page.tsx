@@ -39,6 +39,10 @@ export default function AboutPage() {
                 <img
                   src={portraitUrl}
                   alt="Prof. Dr. Mustafa Özdemir"
+                  width={192}
+                  height={240}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover object-top"
                 />
               </div>

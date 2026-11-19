@@ -43,7 +43,6 @@ export const API_ENDPOINTS = {
     BY_SLUG: (slug: string) => `/categories/${encodeURIComponent(slug)}`,
   },
   LEADS: {
-    BASE: '/leads',
     TRACK_CLICK: '/leads/track-click',
     SUMMARY: (range: string = '30d') =>
       `/leads/summary?range=${encodeURIComponent(range)}`,
@@ -76,10 +75,7 @@ export const API_ENDPOINTS = {
     BASE: '/settings',
   },
   MEDIA: {
-    BASE: '/media',
     UPLOAD: (folder: string = 'general') =>
       `/media/upload?folder=${encodeURIComponent(folder)}`,
-    DELETE: (fileUrl: string) =>
-      `/media?fileUrl=${encodeURIComponent(fileUrl)}`,
   },
 } as const;

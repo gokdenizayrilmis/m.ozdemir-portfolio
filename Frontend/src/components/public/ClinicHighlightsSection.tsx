@@ -1,5 +1,3 @@
-'use client';
-
 import { SiteSettings } from '@/types';
 import { resolveMediaUrl } from '@/utils/cn';
 import ContactActionButtons from '@/components/public/ContactActionButtons';
@@ -140,7 +138,10 @@ export default function ClinicHighlightsSection({
               <img
                 src={centerImageUrl}
                 alt={`${doctorName} Klinik Uygulama`}
+                width={480}
+                height={600}
                 loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover object-center hover:scale-[1.03] transition-transform duration-500"
               />
             )}

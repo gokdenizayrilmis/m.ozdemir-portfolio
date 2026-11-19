@@ -1,5 +1,3 @@
-'use client';
-
 import ContactActionButtons from '@/components/public/ContactActionButtons';
 import { Sparkles } from 'lucide-react';
 

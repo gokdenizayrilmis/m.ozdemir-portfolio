@@ -1,4 +1,5 @@
 import { SiteSettings } from '@/types';
+import { formatPhoneNumber } from '@/utils/cn';
 import ContactActionButtons from '@/components/public/ContactActionButtons';
 import { FadeIn } from '@/components/public/MotionPrimitives';
 import { Phone, Mail, MapPin, Clock, Info } from 'lucide-react';
@@ -68,7 +69,7 @@ export default function ContactSection({ settings }: ContactSectionProps) {
                   </h3>
                   <p className="text-xs text-espresso-800/80">
                     <a
-                      href={`tel:${phone.replace(/\s+/g, '')}`}
+                      href={`tel:${formatPhoneNumber(phone)}`}
                       className="hover:text-bronze-700 font-medium transition"
                     >
                       {phone}
@@ -76,7 +77,7 @@ export default function ContactSection({ settings }: ContactSectionProps) {
                   </p>
                   <p className="text-xs text-espresso-800/80">
                     <a
-                      href={`tel:${secondPhone.replace(/\s+/g, '')}`}
+                      href={`tel:${formatPhoneNumber(secondPhone)}`}
                       className="hover:text-bronze-700 font-medium transition"
                     >
                       {secondPhone}

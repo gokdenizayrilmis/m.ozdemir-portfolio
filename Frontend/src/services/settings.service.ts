@@ -19,7 +19,7 @@ export const FALLBACK_SETTINGS: SiteSettings = {
   },
   legalNotice:
     'T.C. Sağlık Bakanlığı mevzuatı gereğince sitemizde işlem fiyatları belirtilmemektedir. İçerikler yalnızca bilgilendirme amaçlıdır.',
-  createdAt: new Date().toISOString(),
+  createdAt: '2026-01-01T00:00:00.000Z',
 };
 
 export const settingsService = {

@@ -1,21 +1,6 @@
-'use client';
-
-import { useState } from 'react';
-import { AnimatePresence, m } from 'motion/react';
-import { SiteSettings } from '@/types';
 import { resolveMediaUrl } from '@/utils/cn';
-import { Award, ShieldCheck, X, ZoomIn } from 'lucide-react';
-
-interface DoctorAboutSectionProps {
-  settings: SiteSettings | null;
-}
-
-interface LightboxItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  url: string;
-}
+import ImageLightboxModal from '@/components/public/ImageLightboxModal';
+import { Award, ZoomIn } from 'lucide-react';
 
 const DEFAULT_BIO_PARAGRAPHS = [
   '11 Haziran 1970 tarihinde Yozgat’ta doğdu. İlk, orta ve lise öğrenimini Yozgat ve Kayseri’de tamamladı. 1995 yılında İstanbul Üniversitesi, Cerrahpaşa Tıp Fakültesi’nden mezun oldu.',
@@ -42,27 +27,18 @@ const CLINIC_STATS = [
     value: '%100',
     title: 'Kişiye Özel Tedavi',
     description:
-      'Her danışanın cilt yapısı ve tıbbi ihtiyaçları farklıdır; tüm dermatolojik ve lazer uygulamalarımız tamamen size özel planlanır.'
+      'Her danışanın cilt yapısı ve tıbbi ihtiyaçları farklıdır; tüm dermatolojik ve lazer uygulamalarımız tamamen size özel planlanır.',
   },
   {
     value: '10.000+',
     title: 'Mutlu Hasta',
     description:
       'Prof. Dr. Mustafa Özdemir ile kanıta dayalı tıbbi protokoller eşliğinde sağlıklı, estetik ve genç bir cilde kavuşan binlerce mutlu danışan.',
-  }  
+  },
 ];
 
 export default function DoctorAboutSection() {
-  const [activeImage, setActiveImage] = useState<LightboxItem | null>(null);
-
   const portraitUrl = resolveMediaUrl('/uploads/corporate/doctor-portrait.jpg');
-
-  const portraitLightboxItem: LightboxItem = {
-    id: 'portrait',
-    title: 'Prof. Dr. Mustafa Özdemir',
-    subtitle: 'Dermatoloji (Deri ve Zührevi Hastalıkları) & Lazer Uzmanı',
-    url: portraitUrl,
-  };
 
   return (
     <section
@@ -82,17 +58,23 @@ export default function DoctorAboutSection() {
 
             {/* Doctor Portrait (Clickable to Zoom) */}
             {portraitUrl && (
-              <button
-                type="button"
-                onClick={() => setActiveImage(portraitLightboxItem)}
-                aria-label="Prof. Dr. Mustafa Özdemir fotoğrafını büyüt"
-                className="group block w-full text-left relative rounded-3xl p-2 bg-gradient-to-br from-bronze-400/50 via-bronze-600/30 to-espresso-800/40 shadow-2xl shadow-espresso-900/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-bronze-600 cursor-zoom-in"
+              <ImageLightboxModal
+                title="Prof. Dr. Mustafa Özdemir"
+                subtitle="Dermatoloji (Deri ve Zührevi Hastalıkları) & Lazer Uzmanı"
+                imageUrl={portraitUrl}
+                triggerAriaLabel="Prof. Dr. Mustafa Özdemir fotoğrafını büyüt"
+                triggerClassName="group block w-full text-left relative rounded-3xl p-2 bg-gradient-to-br from-bronze-400/50 via-bronze-600/30 to-espresso-800/40 shadow-2xl shadow-espresso-900/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-bronze-600 cursor-zoom-in"
+                titleClassName="text-sm font-serif font-bold"
               >
                 <div className="relative rounded-[22px] overflow-hidden bg-white border border-peach-200/60">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={portraitUrl}
                     alt="Prof. Dr. Mustafa Özdemir"
+                    width={600}
+                    height={750}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-auto block object-contain"
                   />
                   <div className="absolute top-3 right-3 px-2.5 py-1.5 rounded-xl bg-espresso-900/75 text-white text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 backdrop-blur-sm">
@@ -100,7 +82,7 @@ export default function DoctorAboutSection() {
                     <span>Büyüt</span>
                   </div>
                 </div>
-              </button>
+              </ImageLightboxModal>
             )}
           </div>
 
@@ -140,59 +122,6 @@ export default function DoctorAboutSection() {
           ))}
         </div>
       </div>
-
-      {/* Fullscreen Lightbox Modal for All 3 Images */}
-      <AnimatePresence>
-        {activeImage && (
-          <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setActiveImage(null)}
-            className="fixed inset-0 z-50 bg-espresso-950/85 backdrop-blur-sm flex items-center justify-center p-4"
-          >
-            <m.div
-              initial={{ opacity: 0, scale: 0.95, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 8 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl border border-bronze-300 flex flex-col"
-            >
-              <div className="px-6 py-4 bg-espresso-900 text-white flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-5 h-5 text-peach-200 shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-serif font-bold">
-                      {activeImage.title}
-                    </h3>
-                    <p className="text-[11px] text-peach-100/80">
-                      {activeImage.subtitle}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveImage(null)}
-                  className="p-1.5 rounded-lg text-peach-100 hover:text-white hover:bg-espresso-800 transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="p-4 sm:p-6 bg-clinic-canvas flex-1 overflow-y-auto flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={activeImage.url}
-                  alt={activeImage.title}
-                  className="max-h-[72vh] w-auto object-contain rounded-xl shadow-md"
-                />
-              </div>
-            </m.div>
-          </m.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }

@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@/constants/api-endpoints';
 import { AdminAuthResponse, ChangePasswordPayload, Result } from '@/types';
-import { ADMIN_USER_STORAGE_KEY, httpClient } from './http-client';
+import { httpClient } from './http-client';
 
 export const authService = {
   async login(
@@ -51,16 +51,6 @@ export const authService = {
 
   getToken(): string | null {
     return httpClient.getAccessToken();
-  },
-
-  getUser(): AdminAuthResponse | null {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = sessionStorage.getItem(ADMIN_USER_STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as AdminAuthResponse) : null;
-    } catch {
-      return null;
-    }
   },
 
   isAuthenticated(): boolean {

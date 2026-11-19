@@ -8,7 +8,7 @@ import { Category, SiteSettings, Treatment } from '@/types';
 import { Phone, Menu, X, ChevronDown, ArrowRight } from 'lucide-react';
 import ContactActionButtons from '@/components/public/ContactActionButtons';
 import { trackConversionClick } from '@/hooks/use-utm-tracker';
-import { resolveMediaUrl } from '@/utils/cn';
+import { formatPhoneNumber, resolveMediaUrl } from '@/utils/cn';
 
 interface HeaderProps {
   categories: Category[];
@@ -109,6 +109,10 @@ export default function Header({ categories, treatments, settings }: HeaderProps
               <img
                 src={logoSrc}
                 alt="Prof. Dr. Mustafa Özdemir"
+                width={180}
+                height={125}
+                fetchPriority="high"
+                decoding="async"
                 style={{ height: '125px', width: 'auto', maxWidth: 'none' }}
                 className={`-my-6 object-contain object-left transition-all duration-300 ${
                   isTransparent
@@ -269,7 +273,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
           {/* Mobile Hamburger Button */}
           <div className="flex lg:hidden items-center gap-2">
             <a
-              href={`tel:${phone.replace(/\s+/g, '')}`}
+              href={`tel:${formatPhoneNumber(phone)}`}
               onClick={handlePhoneClick}
               className={`p-2 rounded-lg transition ${
                 isTransparent
@@ -277,6 +281,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
                   : 'text-bronze-700 bg-peach-50 hover:bg-peach-100'
               }`}
               aria-label="Hemen Ara"
+              title="Hemen Ara"
             >
               <Phone className="w-5 h-5" />
             </a>
@@ -337,6 +342,8 @@ export default function Header({ categories, treatments, settings }: HeaderProps
                         onClick={() =>
                           setMobileOpenBranch(isExpanded ? null : branch.slug)
                         }
+                        aria-label={`${branch.label} alt tedavilerini aç/kapat`}
+                        aria-expanded={isExpanded}
                         className="p-1.5 text-bronze-600 hover:text-bronze-800 rounded-lg"
                       >
                         <ChevronDown

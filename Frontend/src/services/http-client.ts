@@ -2,7 +2,6 @@ import { API_BASE_URL, API_ENDPOINTS } from '@/constants/api-endpoints';
 import { AdminAuthResponse, Result } from '@/types';
 
 export const ADMIN_TOKEN_STORAGE_KEY = 'clinic_admin_token';
-export const ADMIN_USER_STORAGE_KEY = 'clinic_admin_user';
 
 let inMemoryAccessToken: string | null = null;
 
@@ -44,7 +43,6 @@ class HttpClient {
     if (typeof window === 'undefined') return;
     try {
       sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
-      sessionStorage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(auth));
     } catch {
       // Ignore sessionStorage errors
     }
@@ -55,9 +53,7 @@ class HttpClient {
     if (typeof window === 'undefined') return;
     try {
       sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
-      sessionStorage.removeItem(ADMIN_USER_STORAGE_KEY);
       localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
-      localStorage.removeItem(ADMIN_USER_STORAGE_KEY);
     } catch {
       // Ignore storage errors
     }
@@ -78,6 +74,9 @@ class HttpClient {
   }
 
   private async performSilentRefresh(): Promise<string | null> {
+    const controller = new AbortController();
+    const timerId = setTimeout(() => controller.abort(), 5000);
+
     try {
       const url = this.getFullUrl(API_ENDPOINTS.AUTH.REFRESH);
       const res = await fetch(url, {
@@ -86,6 +85,7 @@ class HttpClient {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -103,6 +103,8 @@ class HttpClient {
       return null;
     } catch {
       return null;
+    } finally {
+      clearTimeout(timerId);
     }
   }
 
@@ -110,7 +112,7 @@ class HttpClient {
     endpoint: string,
     options: HttpRequestOptions = {}
   ): Promise<Result<T>> {
-    const { timeoutMs = 400, _isRetry = false, ...fetchOptions } = options;
+    const { timeoutMs = 3500, _isRetry = false, ...fetchOptions } = options;
     const url = this.getFullUrl(endpoint);
 
     const headers = new Headers(fetchOptions.headers || {});
@@ -134,18 +136,16 @@ class HttpClient {
       endpoint.startsWith(API_ENDPOINTS.AUTH.REFRESH) ||
       endpoint.startsWith(API_ENDPOINTS.AUTH.LOGOUT);
 
-    try {
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timed out')), timeoutMs)
-      );
+    const controller = new AbortController();
+    const timerId = setTimeout(() => controller.abort(), timeoutMs);
 
-      const fetchPromise = fetch(url, {
+    try {
+      const res = await fetch(url, {
         ...fetchOptions,
         headers,
         credentials: isClient ? 'include' : fetchOptions.credentials,
+        signal: fetchOptions.signal ?? controller.signal,
       });
-
-      const res = await Promise.race([fetchPromise, timeoutPromise]);
 
       // 401 Interceptor with Single Promise Lock
       if (res.status === 401 && isClient && !isAuthBypassEndpoint && !_isRetry) {
@@ -186,11 +186,18 @@ class HttpClient {
       const json = (await res.json()) as Result<T>;
       return json;
     } catch (error) {
+      const err = error as Error;
+      const message =
+        err.name === 'AbortError'
+          ? 'Sunucu yanıt süresi aşıldı.'
+          : 'Sunucuya bağlanırken bir hata oluştu.';
       return {
         isSuccess: false,
-        message: 'Sunucuya bağlanırken bir hata oluştu.',
-        errors: [(error as Error).message],
+        message,
+        errors: [err.message],
       };
+    } finally {
+      clearTimeout(timerId);
     }
   }
 

@@ -29,7 +29,7 @@ export const FALLBACK_TREATMENTS: Treatment[] = [
       noIndex: false,
       schemaType: 'MedicalWebPage',
     },
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
   {
     id: 't-2',
@@ -57,7 +57,7 @@ export const FALLBACK_TREATMENTS: Treatment[] = [
       noIndex: false,
       schemaType: 'MedicalWebPage',
     },
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
   {
     id: 't-3',
@@ -85,7 +85,7 @@ export const FALLBACK_TREATMENTS: Treatment[] = [
       noIndex: false,
       schemaType: 'MedicalWebPage',
     },
-    createdAt: new Date().toISOString(),
+    createdAt: '2026-01-01T00:00:00.000Z',
   },
 ];
 

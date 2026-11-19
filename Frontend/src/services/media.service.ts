@@ -15,11 +15,4 @@ export const mediaService = {
       { timeoutMs: 15000 }
     );
   },
-
-  async deleteImage(fileUrl: string): Promise<Result> {
-    return httpClient.delete(API_ENDPOINTS.MEDIA.DELETE(fileUrl), {
-      timeoutMs: 5000,
-    });
-  },
 };
-

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { m } from 'motion/react';
 import { leadService } from '@/services';
@@ -11,9 +12,27 @@ import {
   LeadsSummary,
 } from '@/types';
 import AnimatedCounter from '@/components/admin/AnimatedCounter';
-import ConversionTrendChart from '@/components/admin/ConversionTrendChart';
-import ChannelDistributionDonut from '@/components/admin/ChannelDistributionDonut';
 import { useAdminToast } from '@/components/admin/AdminToast';
+
+const ConversionTrendChart = dynamic(
+  () => import('@/components/admin/ConversionTrendChart'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 h-[380px] animate-pulse" />
+    ),
+  }
+);
+
+const ChannelDistributionDonut = dynamic(
+  () => import('@/components/admin/ChannelDistributionDonut'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 h-[380px] animate-pulse" />
+    ),
+  }
+);
 import {
   MessageCircle,
   Phone,
@@ -772,6 +791,7 @@ export default function AdminOverviewDashboard() {
                     setSearchInput('');
                     setDebouncedSearch('');
                   }}
+                  aria-label="Aramayı temizle"
                   title="Filtreyi temizle"
                   className="hover:text-amber-950 p-0.5 rounded-full hover:bg-amber-100 transition"
                 >
@@ -799,6 +819,8 @@ export default function AdminOverviewDashboard() {
                     setSearchInput('');
                     setDebouncedSearch('');
                   }}
+                  aria-label="Aramayı temizle"
+                  title="Aramayı temizle"
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   <X className="w-3.5 h-3.5" />

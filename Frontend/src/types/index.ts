@@ -91,17 +91,11 @@ export interface SiteSettings {
 
 export interface Lead {
   id: string;
-  fullName: string;
-  phone: string;
-  email?: string;
-  subject: string;
-  message: string;
   sourcePageSlug: string;
-  conversionType: 'ContactForm' | 'WhatsAppClick' | 'PhoneClick';
+  conversionType: 'WhatsAppClick' | 'PhoneClick';
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
-  isRead: boolean;
   createdAt: string;
   updatedAt?: string;
 }

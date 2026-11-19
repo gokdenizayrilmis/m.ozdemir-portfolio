@@ -67,22 +67,20 @@ export async function generateMetadata({
 
 export default async function TreatmentDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const [treatment, settings, categories] = await Promise.all([
+  const [treatment, settings, categories, allTreatments] = await Promise.all([
     treatmentService.getBySlug(slug),
     settingsService.getSettings(),
     categoryService.getAll(),
+    treatmentService.getAll(),
   ]);
 
   if (!treatment) {
     notFound();
   }
 
-  const allCategoryTreatments = await treatmentService.getAll(
-    treatment.categorySlug
-  );
-  const sortedCategoryTreatments = [...allCategoryTreatments].sort(
-    (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
-  );
+  const sortedCategoryTreatments = allTreatments
+    .filter((t) => t.categorySlug === treatment.categorySlug)
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
   const matchedCategory = categories.find(
     (c) => c.slug === treatment.categorySlug
@@ -252,6 +250,8 @@ export default async function TreatmentDetailPage({ params }: PageProps) {
                   <img
                     src={imageUrl}
                     alt={treatment.title}
+                    fetchPriority="high"
+                    decoding="async"
                     className="aspect-[16/9] max-h-[380px] w-full object-cover rounded-2xl border border-stone-200/60 shadow-sm"
                   />
                 </div>

@@ -30,6 +30,8 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
           <img
             src={heroBgUrl}
             alt="Prof. Dr. Mustafa Özdemir Kliniği"
+            fetchPriority="high"
+            decoding="async"
             className="w-full h-full object-cover object-[72%_top] origin-[72%_0%] scale-[1.35] -translate-y-24 md:object-center md:origin-center md:scale-100 md:translate-y-0"
           />
           {/* Top subtle gradient so transparent navbar links and logo stay legible */}

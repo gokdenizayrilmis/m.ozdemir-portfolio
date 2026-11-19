@@ -322,6 +322,7 @@ export default function SectionContentEditor({
                     type="button"
                     disabled={idx === 0}
                     onClick={() => handleMoveSection(idx, -1)}
+                    aria-label={`Bölüm ${idx + 1} yukarı taşı`}
                     title="Yukarı Taşı"
                     className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-white disabled:opacity-30 transition"
                   >
@@ -331,6 +332,7 @@ export default function SectionContentEditor({
                     type="button"
                     disabled={idx === sections.length - 1}
                     onClick={() => handleMoveSection(idx, 1)}
+                    aria-label={`Bölüm ${idx + 1} aşağı taşı`}
                     title="Aşağı Taşı"
                     className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-white disabled:opacity-30 transition"
                   >
@@ -339,6 +341,7 @@ export default function SectionContentEditor({
                   <button
                     type="button"
                     onClick={() => handleRemoveSection(section.id)}
+                    aria-label={`Bölüm ${idx + 1} sil`}
                     title="Bölümü Sil"
                     className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                   >

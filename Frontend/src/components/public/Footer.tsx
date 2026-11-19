@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Category, SiteSettings } from '@/types';
+import { formatPhoneNumber } from '@/utils/cn';
 import { Phone, Mail, MapPin, Clock, ShieldCheck } from 'lucide-react';
 
 interface FooterProps {
@@ -108,7 +109,7 @@ export default function Footer({ categories, settings }: FooterProps) {
             </div>
             <div className="flex items-center gap-2.5">
               <Phone className="w-4 h-4 text-bronze-400 shrink-0" />
-              <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-white transition">
+              <a href={`tel:${formatPhoneNumber(phone)}`} className="hover:text-white transition">
                 {phone}
               </a>
             </div>

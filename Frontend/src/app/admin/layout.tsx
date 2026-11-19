@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 import { LazyMotion, MotionConfig, domMax } from 'motion/react';
 import AdminSidebar, {
   SETTINGS_SUB_ITEMS,
@@ -11,20 +10,6 @@ import AdminSidebar, {
 import { AdminToastProvider } from '@/components/admin/AdminToast';
 import { authService } from '@/services';
 import { ChevronRight, ExternalLink, Loader2, Menu } from 'lucide-react';
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin', 'latin-ext'],
-  weight: ['500', '600', '700', '800'],
-  variable: '--font-jakarta',
-  display: 'swap',
-});
-
-const interAdmin = Inter({
-  subsets: ['latin', 'latin-ext'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-inter-admin',
-  display: 'swap',
-});
 
 function AdminTopbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }) {
   const pathname = usePathname();
@@ -156,7 +141,7 @@ export default function AdminLayout({
     };
   }, [router, isLoginPage]);
 
-  const fontWrapperClass = `${plusJakartaSans.variable} ${interAdmin.variable} admin-shell`;
+  const fontWrapperClass = 'admin-shell';
 
   if (isLoginPage) {
     return (
