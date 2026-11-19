@@ -141,6 +141,14 @@ export const treatmentService = {
     );
   },
 
+  async togglePublish(id: string): Promise<Result<Treatment>> {
+    return httpClient.patch<Treatment>(
+      API_ENDPOINTS.TREATMENTS.TOGGLE_PUBLISH(id),
+      undefined,
+      { timeoutMs: 5000 }
+    );
+  },
+
   async delete(id: string): Promise<Result> {
     return httpClient.delete(API_ENDPOINTS.TREATMENTS.BY_ID(id), {
       timeoutMs: 5000,

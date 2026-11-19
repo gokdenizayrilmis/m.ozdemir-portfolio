@@ -1,19 +1,15 @@
 import { API_ENDPOINTS } from '@/constants/api-endpoints';
 import {
-  CreateLeadPayload,
   Lead,
+  LeadRangeFilter,
+  LeadsSummary,
+  PagedLeadsResponse,
   Result,
   TrackClickPayload,
 } from '@/types';
 import { httpClient } from './http-client';
 
 export const leadService = {
-  async createLead(payload: CreateLeadPayload): Promise<Result<Lead>> {
-    return httpClient.post<Lead>(API_ENDPOINTS.LEADS.BASE, payload, {
-      timeoutMs: 5000,
-    });
-  },
-
   async trackClick(payload: TrackClickPayload): Promise<Result<Lead>> {
     const endpointUrl = httpClient.getFullUrl(API_ENDPOINTS.LEADS.TRACK_CLICK);
 
@@ -39,18 +35,76 @@ export const leadService = {
     });
   },
 
-  async getAllLeads(isRead?: boolean): Promise<Lead[]> {
-    const res = await httpClient.get<Lead[]>(
-      API_ENDPOINTS.LEADS.LIST(isRead),
+  async getSummary(range: LeadRangeFilter = '30d'): Promise<LeadsSummary> {
+    const res = await httpClient.get<LeadsSummary>(
+      API_ENDPOINTS.LEADS.SUMMARY(range),
       { cache: 'no-store', timeoutMs: 5000 }
     );
-    return res.isSuccess && res.data ? res.data : [];
+    return (
+      res.data || {
+        totalClicks: 0,
+        whatsAppClicks: 0,
+        phoneClicks: 0,
+        byCampaign: [],
+        byPage: [],
+      }
+    );
   },
 
-  async markAsRead(id: string): Promise<Result> {
-    return httpClient.patch(API_ENDPOINTS.LEADS.MARK_AS_READ(id), undefined, {
-      timeoutMs: 5000,
+  async getPagedLeads(params: {
+    range?: LeadRangeFilter;
+    type?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<PagedLeadsResponse> {
+    const res = await httpClient.get<PagedLeadsResponse>(
+      API_ENDPOINTS.LEADS.LIST(params),
+      { cache: 'no-store', timeoutMs: 5000 }
+    );
+    return (
+      res.data || {
+        items: [],
+        totalCount: 0,
+        page: params.page || 1,
+        pageSize: params.pageSize || 25,
+      }
+    );
+  },
+
+  async downloadCsv(range: LeadRangeFilter = 'all', type?: string): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+
+    const endpoint = API_ENDPOINTS.LEADS.EXPORT(range, type);
+    const url = httpClient.getFullUrl(endpoint);
+    let token = httpClient.getAccessToken();
+
+    let res = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
+
+    if (res.status === 401) {
+      token = await httpClient.tryRefreshAccessToken();
+      if (!token) return false;
+      res = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+
+    if (!res.ok) return false;
+
+    const blob = await res.blob();
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `donusum-raporu-${range}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(downloadUrl);
+    return true;
   },
 };
-

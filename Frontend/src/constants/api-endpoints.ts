@@ -7,6 +7,9 @@ export const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
+    REFRESH: '/auth/refresh',
+    LOGOUT: '/auth/logout',
+    CHANGE_PASSWORD: '/auth/change-password',
   },
   TREATMENTS: {
     BASE: '/treatments',
@@ -19,6 +22,8 @@ export const API_ENDPOINTS = {
     },
     BY_SLUG: (slug: string) => `/treatments/${encodeURIComponent(slug)}`,
     BY_ID: (id: string) => `/treatments/${encodeURIComponent(id)}`,
+    TOGGLE_PUBLISH: (id: string) =>
+      `/treatments/${encodeURIComponent(id)}/toggle-publish`,
   },
   BLOGS: {
     BASE: '/blogs',
@@ -31,18 +36,38 @@ export const API_ENDPOINTS = {
     },
     BY_SLUG: (slug: string) => `/blogs/${encodeURIComponent(slug)}`,
     BY_ID: (id: string) => `/blogs/${encodeURIComponent(id)}`,
+    TOGGLE_PUBLISH: (id: string) =>
+      `/blogs/${encodeURIComponent(id)}/toggle-publish`,
   },
   CATEGORIES: {
     BASE: '/categories',
     BY_SLUG: (slug: string) => `/categories/${encodeURIComponent(slug)}`,
-    BY_ID: (id: string) => `/categories/${encodeURIComponent(id)}`,
   },
   LEADS: {
     BASE: '/leads',
-    LIST: (isRead?: boolean) =>
-      typeof isRead === 'boolean' ? `/leads?isRead=${isRead}` : '/leads',
     TRACK_CLICK: '/leads/track-click',
-    MARK_AS_READ: (id: string) => `/leads/${encodeURIComponent(id)}/read`,
+    SUMMARY: (range: string = '30d') =>
+      `/leads/summary?range=${encodeURIComponent(range)}`,
+    LIST: (params?: {
+      range?: string;
+      type?: string;
+      page?: number;
+      pageSize?: number;
+    }) => {
+      const search = new URLSearchParams();
+      if (params?.range) search.set('range', params.range);
+      if (params?.type && params.type !== 'all') search.set('type', params.type);
+      if (params?.page) search.set('page', String(params.page));
+      if (params?.pageSize) search.set('pageSize', String(params.pageSize));
+      const qs = search.toString();
+      return qs ? `/leads?${qs}` : '/leads';
+    },
+    EXPORT: (range: string = 'all', type?: string) => {
+      const search = new URLSearchParams();
+      search.set('range', range);
+      if (type && type !== 'all') search.set('type', type);
+      return `/leads/export?${search.toString()}`;
+    },
   },
   SETTINGS: {
     BASE: '/settings',
@@ -55,4 +80,3 @@ export const API_ENDPOINTS = {
       `/media?fileUrl=${encodeURIComponent(fileUrl)}`,
   },
 } as const;
-

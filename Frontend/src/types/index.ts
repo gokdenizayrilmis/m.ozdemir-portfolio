@@ -115,23 +115,44 @@ export interface Lead {
   updatedAt?: string;
 }
 
-export interface CreateLeadPayload {
-  fullName: string;
-  phone: string;
-  email?: string;
-  subject: string;
-  message: string;
-  sourcePageSlug: string;
-  utmSource?: string;
-  utmMedium?: string;
-  utmCampaign?: string;
+export type LeadRangeFilter = 'today' | '7d' | '30d' | 'month' | 'all';
+
+export interface CampaignClickStat {
+  campaign: string;
+  count: number;
+}
+
+export interface PageClickStat {
+  pageSlug: string;
+  count: number;
+}
+
+export interface LeadsSummary {
+  totalClicks: number;
+  whatsAppClicks: number;
+  phoneClicks: number;
+  byCampaign: CampaignClickStat[];
+  byPage: PageClickStat[];
+}
+
+export interface PagedLeadsResponse {
+  items: Lead[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface AdminAuthResponse {
   token: string;
+  accessToken?: string;
   email: string;
   fullName: string;
   role: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface TrackClickPayload {
@@ -147,4 +168,3 @@ export interface UtmData {
   utmMedium?: string;
   utmCampaign?: string;
 }
-

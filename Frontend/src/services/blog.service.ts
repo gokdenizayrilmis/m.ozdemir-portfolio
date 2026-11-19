@@ -34,6 +34,14 @@ export const blogService = {
     });
   },
 
+  async togglePublish(id: string): Promise<Result<BlogPost>> {
+    return httpClient.patch<BlogPost>(
+      API_ENDPOINTS.BLOGS.TOGGLE_PUBLISH(id),
+      undefined,
+      { timeoutMs: 5000 }
+    );
+  },
+
   async delete(id: string): Promise<Result> {
     return httpClient.delete(API_ENDPOINTS.BLOGS.BY_ID(id), {
       timeoutMs: 5000,

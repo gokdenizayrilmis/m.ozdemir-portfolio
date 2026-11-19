@@ -1,10 +1,6 @@
 import { API_ENDPOINTS } from '@/constants/api-endpoints';
-import { AdminAuthResponse, Result } from '@/types';
-import {
-  ADMIN_TOKEN_STORAGE_KEY,
-  ADMIN_USER_STORAGE_KEY,
-  httpClient,
-} from './http-client';
+import { AdminAuthResponse, ChangePasswordPayload, Result } from '@/types';
+import { ADMIN_USER_STORAGE_KEY, httpClient } from './http-client';
 
 export const authService = {
   async login(
@@ -17,29 +13,50 @@ export const authService = {
       { timeoutMs: 5000 }
     );
 
-    if (res.isSuccess && res.data && typeof window !== 'undefined') {
-      localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, res.data.token);
-      localStorage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(res.data));
+    if (res.isSuccess && res.data) {
+      httpClient.setSession(res.data);
     }
 
     return res;
   },
 
-  logout(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
-    localStorage.removeItem(ADMIN_USER_STORAGE_KEY);
+  async refreshSession(): Promise<boolean> {
+    const newToken = await httpClient.tryRefreshAccessToken();
+    return Boolean(newToken);
+  },
+
+  async logout(): Promise<void> {
+    try {
+      await httpClient.post(API_ENDPOINTS.AUTH.LOGOUT, undefined, {
+        timeoutMs: 3000,
+      });
+    } catch {
+      // Even if network fails, clear client state
+    } finally {
+      httpClient.clearSession();
+    }
+  },
+
+  async changePassword(payload: ChangePasswordPayload): Promise<Result> {
+    const res = await httpClient.post<void>(
+      API_ENDPOINTS.AUTH.CHANGE_PASSWORD,
+      payload,
+      { timeoutMs: 5000 }
+    );
+    if (res.isSuccess) {
+      httpClient.clearSession();
+    }
+    return res;
   },
 
   getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
+    return httpClient.getAccessToken();
   },
 
   getUser(): AdminAuthResponse | null {
     if (typeof window === 'undefined') return null;
     try {
-      const raw = localStorage.getItem(ADMIN_USER_STORAGE_KEY);
+      const raw = sessionStorage.getItem(ADMIN_USER_STORAGE_KEY);
       return raw ? (JSON.parse(raw) as AdminAuthResponse) : null;
     } catch {
       return null;
@@ -50,4 +67,3 @@ export const authService = {
     return Boolean(this.getToken());
   },
 };
-

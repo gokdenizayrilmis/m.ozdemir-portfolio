@@ -1,15 +1,19 @@
-import { API_BASE_URL } from '@/constants/api-endpoints';
-import { Result } from '@/types';
+import { API_BASE_URL, API_ENDPOINTS } from '@/constants/api-endpoints';
+import { AdminAuthResponse, Result } from '@/types';
 
 export const ADMIN_TOKEN_STORAGE_KEY = 'clinic_admin_token';
 export const ADMIN_USER_STORAGE_KEY = 'clinic_admin_user';
 
+let inMemoryAccessToken: string | null = null;
+
 export interface HttpRequestOptions extends RequestInit {
   timeoutMs?: number;
+  _isRetry?: boolean;
 }
 
 class HttpClient {
   private readonly baseUrl: string;
+  private refreshPromise: Promise<string | null> | null = null;
 
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl;
@@ -19,11 +23,94 @@ class HttpClient {
     return `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
   }
 
+  public getAccessToken(): string | null {
+    if (inMemoryAccessToken) return inMemoryAccessToken;
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
+      if (stored) {
+        inMemoryAccessToken = stored;
+        return stored;
+      }
+    } catch {
+      // Ignore sessionStorage errors
+    }
+    return null;
+  }
+
+  public setSession(auth: AdminAuthResponse): void {
+    const token = auth.accessToken || auth.token;
+    inMemoryAccessToken = token;
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
+      sessionStorage.setItem(ADMIN_USER_STORAGE_KEY, JSON.stringify(auth));
+    } catch {
+      // Ignore sessionStorage errors
+    }
+  }
+
+  public clearSession(): void {
+    inMemoryAccessToken = null;
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(ADMIN_USER_STORAGE_KEY);
+      localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+      localStorage.removeItem(ADMIN_USER_STORAGE_KEY);
+    } catch {
+      // Ignore storage errors
+    }
+  }
+
+  public async tryRefreshAccessToken(): Promise<string | null> {
+    if (typeof window === 'undefined') return null;
+
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.refreshPromise = this.performSilentRefresh().finally(() => {
+      this.refreshPromise = null;
+    });
+
+    return this.refreshPromise;
+  }
+
+  private async performSilentRefresh(): Promise<string | null> {
+    try {
+      const url = this.getFullUrl(API_ENDPOINTS.AUTH.REFRESH);
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        this.clearSession();
+        return null;
+      }
+
+      const json = (await res.json()) as Result<AdminAuthResponse>;
+      if (json.isSuccess && json.data) {
+        this.setSession(json.data);
+        return json.data.accessToken || json.data.token;
+      }
+
+      this.clearSession();
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   public async request<T>(
     endpoint: string,
     options: HttpRequestOptions = {}
   ): Promise<Result<T>> {
-    const { timeoutMs = 400, ...fetchOptions } = options;
+    const { timeoutMs = 400, _isRetry = false, ...fetchOptions } = options;
     const url = this.getFullUrl(endpoint);
 
     const headers = new Headers(fetchOptions.headers || {});
@@ -34,12 +121,18 @@ class HttpClient {
       headers.set('Content-Type', 'application/json');
     }
 
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
+    const isClient = typeof window !== 'undefined';
+    if (isClient) {
+      const token = this.getAccessToken();
       if (token && !headers.has('Authorization')) {
         headers.set('Authorization', `Bearer ${token}`);
       }
     }
+
+    const isAuthBypassEndpoint =
+      endpoint.startsWith(API_ENDPOINTS.AUTH.LOGIN) ||
+      endpoint.startsWith(API_ENDPOINTS.AUTH.REFRESH) ||
+      endpoint.startsWith(API_ENDPOINTS.AUTH.LOGOUT);
 
     try {
       const timeoutPromise = new Promise<never>((_, reject) =>
@@ -49,12 +142,49 @@ class HttpClient {
       const fetchPromise = fetch(url, {
         ...fetchOptions,
         headers,
-      }).then(async (res) => {
-        const json = (await res.json()) as Result<T>;
-        return json;
+        credentials: isClient ? 'include' : fetchOptions.credentials,
       });
 
-      return await Promise.race([fetchPromise, timeoutPromise]);
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
+
+      // 401 Interceptor with Single Promise Lock
+      if (res.status === 401 && isClient && !isAuthBypassEndpoint && !_isRetry) {
+        const newAccessToken = await this.tryRefreshAccessToken();
+        if (newAccessToken) {
+          const retryHeaders = new Headers(fetchOptions.headers || {});
+          if (
+            !retryHeaders.has('Content-Type') &&
+            !(fetchOptions.body instanceof FormData)
+          ) {
+            retryHeaders.set('Content-Type', 'application/json');
+          }
+          retryHeaders.set('Authorization', `Bearer ${newAccessToken}`);
+
+          return this.request<T>(endpoint, {
+            ...options,
+            headers: retryHeaders,
+            _isRetry: true,
+          });
+        }
+
+        // Refresh failed -> clear session and redirect to login if inside admin panel
+        this.clearSession();
+        if (
+          window.location.pathname.startsWith('/admin') &&
+          window.location.pathname !== '/admin/login'
+        ) {
+          window.location.href = '/admin/login';
+        }
+
+        return {
+          isSuccess: false,
+          message: 'Oturum süreniz doldu. Lütfen tekrar giriş yapınız.',
+          errors: ['Unauthorized'],
+        };
+      }
+
+      const json = (await res.json()) as Result<T>;
+      return json;
     } catch (error) {
       return {
         isSuccess: false,
@@ -64,7 +194,10 @@ class HttpClient {
     }
   }
 
-  public get<T>(endpoint: string, options: HttpRequestOptions = {}): Promise<Result<T>> {
+  public get<T>(
+    endpoint: string,
+    options: HttpRequestOptions = {}
+  ): Promise<Result<T>> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
@@ -76,7 +209,12 @@ class HttpClient {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      body: body instanceof FormData ? body : JSON.stringify(body),
+      body:
+        body instanceof FormData
+          ? body
+          : body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
     });
   }
 
@@ -100,7 +238,7 @@ class HttpClient {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
-      body: body ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   }
 
@@ -113,4 +251,3 @@ class HttpClient {
 }
 
 export const httpClient = new HttpClient();
-

@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from '@/constants/api-endpoints';
-import { Category, Result } from '@/types';
+import { Category } from '@/types';
 import { httpClient } from './http-client';
 
 export const FALLBACK_CATEGORIES: Category[] = [
@@ -91,29 +91,6 @@ export const categoryService = {
       return res.data;
     }
     return FALLBACK_CATEGORIES.find((c) => c.slug === slug) || null;
-  },
-
-  async create(category: Partial<Category>): Promise<Result<Category>> {
-    return httpClient.post<Category>(API_ENDPOINTS.CATEGORIES.BASE, category, {
-      timeoutMs: 5000,
-    });
-  },
-
-  async update(
-    id: string,
-    category: Partial<Category>
-  ): Promise<Result<Category>> {
-    return httpClient.put<Category>(
-      API_ENDPOINTS.CATEGORIES.BY_ID(id),
-      category,
-      { timeoutMs: 5000 }
-    );
-  },
-
-  async delete(id: string): Promise<Result> {
-    return httpClient.delete(API_ENDPOINTS.CATEGORIES.BY_ID(id), {
-      timeoutMs: 5000,
-    });
   },
 };
 
