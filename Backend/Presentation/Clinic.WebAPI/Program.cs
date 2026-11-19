@@ -30,7 +30,6 @@ if (allowedOrigins.Length == 0)
     allowedOrigins = new[]
     {
         "http://localhost:3000",
-        "http://127.0.0.1:3000",
         "https://drmustafaozdemir.com",
         "https://www.drmustafaozdemir.com"
     };
