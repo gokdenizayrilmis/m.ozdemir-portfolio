@@ -58,6 +58,7 @@ export const leadService = {
     type?: string;
     page?: number;
     pageSize?: number;
+    search?: string;
   }): Promise<PagedLeadsResponse> {
     const res = await httpClient.get<PagedLeadsResponse>(
       API_ENDPOINTS.LEADS.LIST(params),
@@ -68,7 +69,7 @@ export const leadService = {
         items: [],
         totalCount: 0,
         page: params.page || 1,
-        pageSize: params.pageSize || 25,
+        pageSize: params.pageSize || 10,
       }
     );
   },

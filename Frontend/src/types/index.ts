@@ -126,6 +126,14 @@ export interface DailyTrendPoint {
   total: number;
 }
 
+export interface HourlyClickStat {
+  hour: number;
+  label: string;
+  whatsApp: number;
+  phone: number;
+  total: number;
+}
+
 export interface PreviousPeriodComparison {
   previousTotalClicks: number;
   previousWhatsAppClicks: number;
@@ -142,6 +150,9 @@ export interface LeadsSummary {
   byCampaign: CampaignClickStat[];
   byPage: PageClickStat[];
   dailyTrend: DailyTrendPoint[];
+  hourlyDistribution?: HourlyClickStat[];
+  businessHoursClicks?: number;
+  afterHoursClicks?: number;
   previousPeriod?: PreviousPeriodComparison | null;
   previousTotalClicks?: number | null;
   totalChangePercent?: number | null;

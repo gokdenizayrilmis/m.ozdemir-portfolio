@@ -14,7 +14,8 @@ public interface ILeadRepository
         DateTime? fromUtc = null,
         string? conversionType = null,
         int page = 1,
-        int pageSize = 25,
+        int pageSize = 10,
+        string? search = null,
         CancellationToken cancellationToken = default);
 
     Task CreateAsync(Lead lead, CancellationToken cancellationToken = default);

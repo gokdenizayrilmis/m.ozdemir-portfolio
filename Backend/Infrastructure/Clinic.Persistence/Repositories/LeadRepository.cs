@@ -1,6 +1,8 @@
+using System.Text.RegularExpressions;
 using Clinic.Application.Common.Interfaces;
 using Clinic.Domain.Entities;
 using Clinic.Persistence.Context;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Clinic.Persistence.Repositories;
@@ -22,7 +24,7 @@ public class LeadRepository : ILeadRepository
         string? conversionType = null,
         CancellationToken cancellationToken = default)
     {
-        var filter = BuildFilter(fromUtc, toUtc, conversionType);
+        var filter = BuildFilter(fromUtc, toUtc, conversionType, null);
         return await _context.Leads
             .Find(filter)
             .SortByDescending(x => x.CreatedAt)
@@ -33,12 +35,13 @@ public class LeadRepository : ILeadRepository
         DateTime? fromUtc = null,
         string? conversionType = null,
         int page = 1,
-        int pageSize = 25,
+        int pageSize = 10,
+        string? search = null,
         CancellationToken cancellationToken = default)
     {
         var safePage = page < 1 ? 1 : page;
-        var safePageSize = pageSize < 1 ? 25 : (pageSize > 200 ? 200 : pageSize);
-        var filter = BuildFilter(fromUtc, null, conversionType);
+        var safePageSize = pageSize < 1 ? 10 : (pageSize > 200 ? 200 : pageSize);
+        var filter = BuildFilter(fromUtc, null, conversionType, search);
 
         var totalCount = (int)await _context.Leads.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
         var items = await _context.Leads
@@ -59,7 +62,8 @@ public class LeadRepository : ILeadRepository
     private static FilterDefinition<Lead> BuildFilter(
         DateTime? fromUtc,
         DateTime? toUtc,
-        string? conversionType)
+        string? conversionType,
+        string? search)
     {
         var builder = Builders<Lead>.Filter;
         var filter = builder.Eq(x => x.IsDeleted, false);
@@ -83,6 +87,35 @@ public class LeadRepository : ILeadRepository
         {
             // Exclude any legacy ContactForm records so totalClicks == whatsAppClicks + phoneClicks
             filter &= builder.In(x => x.ConversionType, ValidClickTypes);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            var escaped = Regex.Escape(term);
+            var regex = new BsonRegularExpression(escaped, "i");
+
+            var searchFilters = new List<FilterDefinition<Lead>>
+            {
+                builder.Regex(x => x.SourcePageSlug, regex),
+                builder.Regex(x => x.UtmCampaign, regex),
+                builder.Regex(x => x.UtmSource, regex)
+            };
+
+            var lowerTerm = term.ToLowerInvariant();
+            if ("organik / doğrudan ziyaret".Contains(lowerTerm) ||
+                "organik / dogrudan ziyaret".Contains(lowerTerm))
+            {
+                searchFilters.Add(builder.Eq(x => x.UtmCampaign, null));
+                searchFilters.Add(builder.Eq(x => x.UtmCampaign, string.Empty));
+            }
+
+            if ("ana sayfa (/)".Contains(lowerTerm) || term == "/")
+            {
+                searchFilters.Add(builder.Eq(x => x.SourcePageSlug, "/"));
+            }
+
+            filter &= builder.Or(searchFilters);
         }
 
         return filter;

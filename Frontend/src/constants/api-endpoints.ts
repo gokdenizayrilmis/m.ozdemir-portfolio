@@ -52,12 +52,16 @@ export const API_ENDPOINTS = {
       type?: string;
       page?: number;
       pageSize?: number;
+      search?: string;
     }) => {
       const search = new URLSearchParams();
       if (params?.range) search.set('range', params.range);
       if (params?.type && params.type !== 'all') search.set('type', params.type);
       if (params?.page) search.set('page', String(params.page));
       if (params?.pageSize) search.set('pageSize', String(params.pageSize));
+      if (params?.search && params.search.trim()) {
+        search.set('search', params.search.trim());
+      }
       const qs = search.toString();
       return qs ? `/leads?${qs}` : '/leads';
     },

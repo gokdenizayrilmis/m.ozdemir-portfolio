@@ -18,6 +18,14 @@ public record DailyTrendPointDto(
     int Total
 );
 
+public record HourlyClickStatDto(
+    int Hour,
+    string Label,
+    int WhatsApp,
+    int Phone,
+    int Total
+);
+
 public record PreviousPeriodComparisonDto(
     int PreviousTotalClicks,
     int PreviousWhatsAppClicks,
@@ -34,6 +42,9 @@ public record LeadsSummaryDto(
     List<CampaignClickStatDto> ByCampaign,
     List<PageClickStatDto> ByPage,
     List<DailyTrendPointDto> DailyTrend,
+    List<HourlyClickStatDto> HourlyDistribution,
+    int BusinessHoursClicks,
+    int AfterHoursClicks,
     PreviousPeriodComparisonDto? PreviousPeriod,
     int? PreviousTotalClicks,
     double? TotalChangePercent,
@@ -187,6 +198,34 @@ public static class LeadRangeHelper
         return result;
     }
 
+    public static List<HourlyClickStatDto> BuildHourlyDistribution(List<Lead> leads)
+    {
+        var groupedByHour = leads
+            .GroupBy(x => x.CreatedAt.AddHours(3).Hour)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var points = new List<HourlyClickStatDto>(24);
+        for (var hour = 0; hour < 24; hour++)
+        {
+            var wa = 0;
+            var ph = 0;
+            if (groupedByHour.TryGetValue(hour, out var hourLeads))
+            {
+                wa = hourLeads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
+                ph = hourLeads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+            }
+
+            points.Add(new HourlyClickStatDto(
+                hour,
+                $"{hour:D2}:00",
+                wa,
+                ph,
+                wa + ph));
+        }
+
+        return points;
+    }
+
     public static double CalculateChangePercent(int current, int previous)
     {
         if (previous <= 0)
@@ -278,6 +317,11 @@ public class GetLeadsSummaryQueryHandler : IRequestHandler<GetLeadsSummaryQuery,
             .ToList();
 
         var dailyTrend = LeadRangeHelper.BuildDailyTrend(request.Range, leads);
+        var hourlyDistribution = LeadRangeHelper.BuildHourlyDistribution(leads);
+        var businessHoursClicks = hourlyDistribution
+            .Where(x => x.Hour >= 9 && x.Hour < 19)
+            .Sum(x => x.Total);
+        var afterHoursClicks = Math.Max(0, totalClicks - businessHoursClicks);
 
         PreviousPeriodComparisonDto? previousPeriod = null;
         var prevWindow = LeadRangeHelper.GetPreviousPeriodWindowUtc(request.Range);
@@ -309,6 +353,9 @@ public class GetLeadsSummaryQueryHandler : IRequestHandler<GetLeadsSummaryQuery,
             byCampaign,
             byPage,
             dailyTrend,
+            hourlyDistribution,
+            businessHoursClicks,
+            afterHoursClicks,
             previousPeriod,
             previousPeriod?.PreviousTotalClicks,
             previousPeriod?.TotalChangePercent,
@@ -324,7 +371,8 @@ public record GetPagedLeadsQuery(
     string Range = "all",
     string? Type = null,
     int Page = 1,
-    int PageSize = 25
+    int PageSize = 10,
+    string? Search = null
 ) : IRequest<Result<PagedLeadsResponse>>;
 
 public class GetPagedLeadsQueryHandler : IRequestHandler<GetPagedLeadsQuery, Result<PagedLeadsResponse>>
@@ -339,7 +387,7 @@ public class GetPagedLeadsQueryHandler : IRequestHandler<GetPagedLeadsQuery, Res
     public async Task<Result<PagedLeadsResponse>> Handle(GetPagedLeadsQuery request, CancellationToken cancellationToken)
     {
         var safePage = request.Page < 1 ? 1 : request.Page;
-        var safePageSize = request.PageSize < 1 ? 25 : (request.PageSize > 200 ? 200 : request.PageSize);
+        var safePageSize = request.PageSize < 1 ? 10 : (request.PageSize > 200 ? 200 : request.PageSize);
         var fromUtc = LeadRangeHelper.ParseRangeToUtc(request.Range);
 
         var (items, totalCount) = await _repository.GetPagedAsync(
@@ -347,6 +395,7 @@ public class GetPagedLeadsQueryHandler : IRequestHandler<GetPagedLeadsQuery, Res
             request.Type,
             safePage,
             safePageSize,
+            request.Search,
             cancellationToken);
 
         var response = new PagedLeadsResponse(items, totalCount, safePage, safePageSize);

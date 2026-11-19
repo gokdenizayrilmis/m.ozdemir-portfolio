@@ -36,10 +36,11 @@ public class LeadsController : BaseApiController
         [FromQuery] string range = "all",
         [FromQuery] string? type = null,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(new GetPagedLeadsQuery(range, type, page, pageSize), cancellationToken);
+        var result = await Mediator.Send(new GetPagedLeadsQuery(range, type, page, pageSize, search), cancellationToken);
         return Ok(result);
     }
 
