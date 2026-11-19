@@ -4,9 +4,7 @@ namespace Clinic.Application.Common.Interfaces;
 
 public interface ILeadRepository
 {
-    Task<List<Lead>> GetAllAsync(bool? isRead = null, CancellationToken cancellationToken = default);
-    Task<Lead?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<List<Lead>> GetFilteredAsync(DateTime? fromUtc = null, string? conversionType = null, CancellationToken cancellationToken = default);
+    Task<(List<Lead> Items, int TotalCount)> GetPagedAsync(DateTime? fromUtc = null, string? conversionType = null, int page = 1, int pageSize = 25, CancellationToken cancellationToken = default);
     Task CreateAsync(Lead lead, CancellationToken cancellationToken = default);
-    Task UpdateAsync(Lead lead, CancellationToken cancellationToken = default);
 }
-
