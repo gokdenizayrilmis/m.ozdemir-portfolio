@@ -17,24 +17,43 @@ export default function AdminLayout({
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (isLoginPage) {
-      setIsAuthenticated(true);
-      return;
+    let active = true;
+
+    async function verifySession() {
+      if (isLoginPage) {
+        if (active) setIsAuthenticated(true);
+        return;
+      }
+
+      if (authService.isAuthenticated()) {
+        if (active) setIsAuthenticated(true);
+        return;
+      }
+
+      // Silent Refresh on page reload (F5) using HttpOnly Refresh Token Cookie
+      const refreshed = await authService.refreshSession();
+      if (!active) return;
+
+      if (refreshed) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+        router.replace('/admin/login');
+      }
     }
 
-    if (!authService.isAuthenticated()) {
-      router.push('/admin/login');
-    } else {
-      setIsAuthenticated(true);
-    }
+    verifySession();
+
+    return () => {
+      active = false;
+    };
   }, [router, isLoginPage]);
 
-  // Login page has its own clean standalone design
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  if (isAuthenticated === null) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 gap-3">
         <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
@@ -52,4 +71,3 @@ export default function AdminLayout({
     </div>
   );
 }
-
