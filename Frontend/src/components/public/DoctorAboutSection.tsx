@@ -52,25 +52,17 @@ const CLINIC_STATS = [
   }  
 ];
 
-export default function DoctorAboutSection({
-  settings,
-}: DoctorAboutSectionProps) {
+export default function DoctorAboutSection() {
   const [activeImage, setActiveImage] = useState<LightboxItem | null>(null);
 
-  const portraitUrl = resolveMediaUrl(
-    settings?.doctorPortraitUrl,
-    '/uploads/corporate/doctor-portrait.jpg'
-  );
+  const portraitUrl = resolveMediaUrl('/uploads/corporate/doctor-portrait.jpg');
 
   const portraitLightboxItem: LightboxItem = {
     id: 'portrait',
-    title: settings?.doctorName || 'Prof. Dr. Mustafa Özdemir',
+    title: 'Prof. Dr. Mustafa Özdemir',
     subtitle: 'Dermatoloji (Deri ve Zührevi Hastalıkları) & Lazer Uzmanı',
     url: portraitUrl,
   };
-
-  const hasCustomLongBio =
-    settings?.doctorBio && settings.doctorBio.includes('11 Haziran 1970');
 
   return (
     <section
@@ -100,7 +92,7 @@ export default function DoctorAboutSection({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={portraitUrl}
-                    alt={settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+                    alt="Prof. Dr. Mustafa Özdemir"
                     className="w-full h-auto block object-contain"
                   />
                   <div className="absolute top-3 right-3 px-2.5 py-1.5 rounded-xl bg-espresso-900/75 text-white text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 backdrop-blur-sm">
@@ -115,22 +107,15 @@ export default function DoctorAboutSection({
           {/* RIGHT COLUMN: Academic Biography & Expertise */}
           <div className="lg:col-span-7 space-y-4">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-espresso-900 tracking-tight leading-[1.12]">
-              {settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+              Prof. Dr. Mustafa Özdemir
             </h2>
 
             {/* Full 5-Paragraph Doctor Biography */}
-            {hasCustomLongBio ? (
-              <div
-                className="space-y-3 text-sm sm:text-[15px] text-espresso-800/85 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: settings!.doctorBio }}
-              />
-            ) : (
-              <div className="space-y-3 text-sm sm:text-[15px] text-espresso-800/85 leading-relaxed">
-                {DEFAULT_BIO_PARAGRAPHS.map((paragraph, idx) => (
-                  <p key={idx}>{paragraph}</p>
-                ))}
-              </div>
-            )}
+            <div className="space-y-3 text-sm sm:text-[15px] text-espresso-800/85 leading-relaxed">
+              {DEFAULT_BIO_PARAGRAPHS.map((paragraph, idx) => (
+                <p key={idx}>{paragraph}</p>
+              ))}
+            </div>
           </div>
         </div>
 

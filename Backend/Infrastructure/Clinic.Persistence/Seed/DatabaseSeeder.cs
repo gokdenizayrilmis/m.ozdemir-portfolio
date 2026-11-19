@@ -86,51 +86,12 @@ public class DatabaseSeeder
         var existing = await _context.SiteSettings.Find(_ => true).FirstOrDefaultAsync(cancellationToken);
         if (existing is not null)
         {
-            var needsUpdate = false;
-
-            if (string.IsNullOrWhiteSpace(existing.LogoUrl) || existing.LogoUrl.StartsWith("/images/"))
-            {
-                existing.LogoUrl = "/uploads/corporate/logo.png";
-                needsUpdate = true;
-            }
-            if (string.IsNullOrWhiteSpace(existing.DoctorPortraitUrl) || existing.DoctorPortraitUrl.StartsWith("/images/"))
-            {
-                existing.DoctorPortraitUrl = "/uploads/corporate/doctor-portrait.jpg";
-                needsUpdate = true;
-            }
-            if (string.IsNullOrWhiteSpace(existing.HeroShowroomImageUrl) || existing.HeroShowroomImageUrl.StartsWith("/images/"))
-            {
-                existing.HeroShowroomImageUrl = "/uploads/corporate/hero-showroom.jpg";
-                needsUpdate = true;
-            }
-            if (string.IsNullOrWhiteSpace(existing.HealthTurkiyeCertificateUrl) || existing.HealthTurkiyeCertificateUrl.StartsWith("/images/"))
-            {
-                existing.HealthTurkiyeCertificateUrl = "/uploads/corporate/health-turkiye-certificate.jpeg";
-                needsUpdate = true;
-            }
-            if (string.IsNullOrWhiteSpace(existing.MinistryCertificateUrl) || existing.MinistryCertificateUrl.StartsWith("/images/"))
-            {
-                existing.MinistryCertificateUrl = "/uploads/corporate/ministry-certificate.jpeg";
-                needsUpdate = true;
-            }
-
-            if (needsUpdate)
-            {
-                existing.UpdatedAt = DateTime.UtcNow;
-                await _context.SiteSettings.ReplaceOneAsync(
-                    x => x.Id == existing.Id,
-                    existing,
-                    cancellationToken: cancellationToken);
-            }
             return;
         }
 
         var settings = new SiteSettings
         {
             ClinicName = "Prof. Dr. Mustafa Özdemir Dermatoloji & Lazer Kliniği",
-            DoctorName = "Prof. Dr. Mustafa Özdemir",
-            DoctorTitle = "Dermatoloji (Deri ve Zührevi Hastalıkları) Uzmanı",
-            DoctorBio = "<p><strong>Prof. Dr. Mustafa Özdemir</strong>, 1995 yılında İstanbul Üniversitesi Cerrahpaşa Tıp Fakültesi'nden mezun olmuştur. Dermatoloji (Deri ve Zührevi Hastalıklar) uzmanlık eğitimini tamamladıktan sonra akademik çalışmalarını sürdürerek 2015 yılında <strong>Profesör</strong> unvanını almıştır.</p><p>Klinik dermatoloji, lazer tedavileri, dermatoskopik ben taraması, HPV ve genital siğil tedavileri, akne ve leke tedavileri ile kozmetik dermatoloji alanlarında ulusal ve uluslararası hakemli dergilerde yayımlanmış çok sayıda bilimsel makalesi bulunmaktadır. Şu anda İstanbul Bakırköy / Ataköy Towers'taki özel kliniğinde hastalarına kanıta dayalı modern dermatoloji hizmeti sunmaktadır.</p>",
             Address = "Ataköy 7-8-9-10. Kısım Mah. Çobançeşme E-5 Yanyol Cad. Ataköy Towers B-Blok No:146, 34158 Bakırköy/İstanbul",
             PhoneNumbers = new List<string> { "+90 552 265 64 36", "0 553 794 26 00" },
             WhatsAppNumber = "905522656436",
@@ -142,12 +103,7 @@ public class DatabaseSeeder
                 Instagram = "https://www.instagram.com/prof.dr.mustafaozdemir",
                 Facebook = "https://www.facebook.com/drmustafaozdemir"
             },
-            LegalNotice = "T.C. Sağlık Bakanlığı yönergeleri gereği sitemizde işlem fiyatları belirtilmemekte olup, tüm içerikler yalnızca bilgilendirme amaçlıdır. Tanı ve tedavi için mutlaka uzman hekiminize başvurunuz.",
-            LogoUrl = "/uploads/corporate/logo.png",
-            DoctorPortraitUrl = "/uploads/corporate/doctor-portrait.jpg",
-            HeroShowroomImageUrl = "/uploads/corporate/hero-showroom.jpg",
-            HealthTurkiyeCertificateUrl = "/uploads/corporate/health-turkiye-certificate.jpeg",
-            MinistryCertificateUrl = "/uploads/corporate/ministry-certificate.jpeg"
+            LegalNotice = "T.C. Sağlık Bakanlığı yönergeleri gereği sitemizde işlem fiyatları belirtilmemekte olup, tüm içerikler yalnızca bilgilendirme amaçlıdır. Tanı ve tedavi için mutlaka uzman hekiminize başvurunuz."
         };
 
         await _context.SiteSettings.InsertOneAsync(settings, cancellationToken: cancellationToken);

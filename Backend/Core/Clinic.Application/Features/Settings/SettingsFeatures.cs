@@ -28,9 +28,6 @@ public class GetSiteSettingsQueryHandler : IRequestHandler<GetSiteSettingsQuery,
 // 2. UpdateSiteSettingsCommand
 public record UpdateSiteSettingsCommand(
     string ClinicName,
-    string DoctorName,
-    string DoctorTitle,
-    string DoctorBio,
     string Address,
     List<string> PhoneNumbers,
     string WhatsAppNumber,
@@ -40,13 +37,7 @@ public record UpdateSiteSettingsCommand(
     SocialMediaLinks? SocialMedia,
     string? GoogleTagManagerId,
     string? GoogleAnalyticsId,
-    string? LegalNotice,
-    string? LogoUrl,
-    string? DoctorPortraitUrl,
-    string? HeroShowroomImageUrl,
-    string? HeroVideoUrl,
-    string? HealthTurkiyeCertificateUrl,
-    string? MinistryCertificateUrl
+    string? LegalNotice
 ) : IRequest<Result<SiteSettings>>;
 
 public class UpdateSiteSettingsCommandHandler : IRequestHandler<UpdateSiteSettingsCommand, Result<SiteSettings>>
@@ -67,9 +58,6 @@ public class UpdateSiteSettingsCommandHandler : IRequestHandler<UpdateSiteSettin
         var current = await _repository.GetSettingsAsync(cancellationToken);
 
         current.ClinicName = request.ClinicName.Trim();
-        current.DoctorName = request.DoctorName.Trim();
-        current.DoctorTitle = request.DoctorTitle.Trim();
-        current.DoctorBio = request.DoctorBio;
         current.Address = request.Address.Trim();
         current.PhoneNumbers = request.PhoneNumbers;
         current.WhatsAppNumber = request.WhatsAppNumber.Trim();
@@ -79,22 +67,11 @@ public class UpdateSiteSettingsCommandHandler : IRequestHandler<UpdateSiteSettin
         current.SocialMedia = request.SocialMedia ?? current.SocialMedia;
         current.GoogleTagManagerId = request.GoogleTagManagerId;
         current.GoogleAnalyticsId = request.GoogleAnalyticsId;
+
         if (!string.IsNullOrWhiteSpace(request.LegalNotice))
         {
             current.LegalNotice = request.LegalNotice.Trim();
         }
-
-        if (!string.IsNullOrWhiteSpace(request.LogoUrl))
-            current.LogoUrl = request.LogoUrl.Trim();
-        if (!string.IsNullOrWhiteSpace(request.DoctorPortraitUrl))
-            current.DoctorPortraitUrl = request.DoctorPortraitUrl.Trim();
-        if (!string.IsNullOrWhiteSpace(request.HeroShowroomImageUrl))
-            current.HeroShowroomImageUrl = request.HeroShowroomImageUrl.Trim();
-        current.HeroVideoUrl = request.HeroVideoUrl?.Trim();
-        if (!string.IsNullOrWhiteSpace(request.HealthTurkiyeCertificateUrl))
-            current.HealthTurkiyeCertificateUrl = request.HealthTurkiyeCertificateUrl.Trim();
-        if (!string.IsNullOrWhiteSpace(request.MinistryCertificateUrl))
-            current.MinistryCertificateUrl = request.MinistryCertificateUrl.Trim();
 
         current.UpdatedAt = DateTime.UtcNow;
 

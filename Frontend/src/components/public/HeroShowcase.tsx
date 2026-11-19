@@ -15,10 +15,7 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
   const waUrl = createWhatsAppUrl(whatsappNumber);
 
   // Full-bleed clinic reception photo with Prof. Dr. Mustafa Özdemir on the right
-  const heroBgUrl = resolveMediaUrl(
-    settings?.heroShowroomImageUrl,
-    '/uploads/corporate/hero-showroom.jpg'
-  );
+  const heroBgUrl = resolveMediaUrl('/uploads/corporate/hero-showroom.jpg');
 
   const handleWhatsAppClick = () => {
     trackConversionClick('WhatsAppClick', '/');
@@ -32,7 +29,7 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={heroBgUrl}
-            alt={settings?.doctorName || 'Prof. Dr. Mustafa Özdemir Kliniği'}
+            alt="Prof. Dr. Mustafa Özdemir Kliniği"
             className="w-full h-full object-cover object-[72%_top] origin-[72%_0%] scale-[1.35] -translate-y-24 md:object-center md:origin-center md:scale-100 md:translate-y-0"
           />
           {/* Top subtle gradient so transparent navbar links and logo stay legible */}
@@ -71,7 +68,7 @@ export default function HeroShowcase({ settings }: HeroShowcaseProps) {
 
           {/* Doctor Signature Style Line */}
           <p className="font-serif italic text-xl sm:text-3xl text-peach-200/90 tracking-wide pt-0.5">
-            {settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+            Prof. Dr. Mustafa Özdemir
           </p>
 
           {/* Clean 2-Button CTA */}

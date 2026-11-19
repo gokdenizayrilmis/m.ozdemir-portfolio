@@ -46,10 +46,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
 
   const phone = settings?.phoneNumbers?.[0] || '+90 552 265 64 36';
   const whatsappNumber = settings?.whatsAppNumber || '905522656436';
-  const logoSrc = resolveMediaUrl(
-    settings?.logoUrl,
-    '/uploads/corporate/logo.png'
-  );
+  const logoSrc = resolveMediaUrl('/uploads/corporate/logo.png');
 
   const handlePhoneClick = () => {
     trackConversionClick('PhoneClick', window.location.pathname);
@@ -104,16 +101,14 @@ export default function Header({ categories, treatments, settings }: HeaderProps
           <Link
             href="/"
             onClick={(e) => handleHomeSectionClick(e)}
-            aria-label={
-              settings?.doctorName || 'Prof. Dr. Mustafa Özdemir Ana Sayfa'
-            }
+            aria-label="Prof. Dr. Mustafa Özdemir Ana Sayfa"
             className="flex items-center shrink-0 rounded-xl transition-all duration-300 hover:opacity-90 focus:outline-none overflow-visible"
           >
             {logoSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoSrc}
-                alt={settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+                alt="Prof. Dr. Mustafa Özdemir"
                 style={{ height: '125px', width: 'auto', maxWidth: 'none' }}
                 className={`-my-6 object-contain object-left transition-all duration-300 ${
                   isTransparent
@@ -123,7 +118,7 @@ export default function Header({ categories, treatments, settings }: HeaderProps
               />
             ) : (
               <span className="text-lg font-serif font-bold text-espresso-900">
-                {settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+                Prof. Dr. Mustafa Özdemir
               </span>
             )}
           </Link>

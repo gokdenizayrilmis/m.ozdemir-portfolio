@@ -62,7 +62,13 @@ public class MongoDbContext
                 BsonClassMap.RegisterClassMap<BlogPost>(cm => cm.AutoMap());
 
             if (!BsonClassMap.IsClassMapRegistered(typeof(SiteSettings)))
-                BsonClassMap.RegisterClassMap<SiteSettings>(cm => cm.AutoMap());
+            {
+                BsonClassMap.RegisterClassMap<SiteSettings>(cm =>
+                {
+                    cm.AutoMap();
+                    cm.SetIgnoreExtraElements(true);
+                });
+            }
 
             if (!BsonClassMap.IsClassMapRegistered(typeof(Lead)))
                 BsonClassMap.RegisterClassMap<Lead>(cm => cm.AutoMap());

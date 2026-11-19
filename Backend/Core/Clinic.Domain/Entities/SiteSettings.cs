@@ -6,9 +6,6 @@ namespace Clinic.Domain.Entities;
 public class SiteSettings : BaseEntity
 {
     public string ClinicName { get; set; } = "Prof. Dr. Mustafa Özdemir Dermatoloji Kliniği";
-    public string DoctorName { get; set; } = "Prof. Dr. Mustafa Özdemir";
-    public string DoctorTitle { get; set; } = "Dermatoloji (Deri ve Zührevi Hastalıkları) Uzmanı";
-    public string DoctorBio { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public List<string> PhoneNumbers { get; set; } = new();
     public string WhatsAppNumber { get; set; } = string.Empty;
@@ -19,12 +16,4 @@ public class SiteSettings : BaseEntity
     public string? GoogleTagManagerId { get; set; }
     public string? GoogleAnalyticsId { get; set; }
     public string LegalNotice { get; set; } = "T.C. Sağlık Bakanlığı yönergeleri gereği sitemizde işlem fiyatları belirtilmemekte olup, tüm içerikler yalnızca bilgilendirme amaçlıdır. Tanı ve tedavi için mutlaka hekiminize başvurunuz.";
-
-    // Dynamic Corporate & Hero Visual Fields
-    public string LogoUrl { get; set; } = "/uploads/corporate/logo.png";
-    public string DoctorPortraitUrl { get; set; } = "/uploads/corporate/doctor-portrait.jpg";
-    public string HeroShowroomImageUrl { get; set; } = "/uploads/corporate/hero-showroom.jpg";
-    public string? HeroVideoUrl { get; set; }
-    public string HealthTurkiyeCertificateUrl { get; set; } = "/uploads/corporate/health-turkiye-certificate.jpeg";
-    public string MinistryCertificateUrl { get; set; } = "/uploads/corporate/ministry-certificate.jpeg";
 }

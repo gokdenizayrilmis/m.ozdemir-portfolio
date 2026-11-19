@@ -22,17 +22,13 @@ interface LightboxItem {
 const HEALTH_TURKIYE_URL =
   'https://www.healthturkiye.gov.tr/hospital/prof.-dr.-mustafa-ozdemir-muayenehanesi';
 
-export default function HealthTourismSection({
-  settings,
-}: HealthTourismSectionProps) {
+export default function HealthTourismSection() {
   const [activeImage, setActiveImage] = useState<LightboxItem | null>(null);
 
   const ministryCertUrl = resolveMediaUrl(
-    settings?.ministryCertificateUrl,
     '/uploads/corporate/ministry-certificate.jpeg'
   );
   const healthTurkiyeCertUrl = resolveMediaUrl(
-    settings?.healthTurkiyeCertificateUrl,
     '/uploads/corporate/health-turkiye-certificate.jpeg'
   );
 

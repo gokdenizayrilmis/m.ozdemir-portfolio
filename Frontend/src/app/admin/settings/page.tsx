@@ -4,12 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService, settingsService } from '@/services';
 import { SiteSettings } from '@/types';
-import ImageUpload from '@/components/admin/ImageUpload';
 import {
   Save,
   Loader2,
   CheckCircle2,
-  Image as ImageIcon,
   KeyRound,
   AlertCircle,
 } from 'lucide-react';
@@ -134,8 +132,8 @@ export default function AdminSettingsPage() {
           Klinik &amp; İletişim Ayarları
         </h1>
         <p className="text-xs text-slate-500">
-          Kurumsal görseller, telefon numaraları, WhatsApp randevu hattı,
-          GTM/GA4 kimlikleri ve yönetici güvenliği
+          Telefon numaraları, WhatsApp randevu hattı, adres, GTM/GA4 kimlikleri
+          ve yönetici güvenliği
         </p>
       </div>
 
@@ -150,75 +148,6 @@ export default function AdminSettingsPage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-6 text-xs">
-        {/* Corporate Images & Certificates Card */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-5">
-          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
-              <ImageIcon className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base">
-                Kurumsal Görseller &amp; Belgeler
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                Üst menü logosu, Ana Sayfa Giriş (Hero) görseli, Hakkımızda
-                portresi ve resmi yetki belgelerini yükleyerek anında
-                güncelleyin
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <ImageUpload
-              label="Üst Menü & Kurumsal Logo"
-              description="Header sol üst köşede gösterilen resmi klinik logosu"
-              folder="corporate"
-              value={settings.logoUrl || ''}
-              onChange={(url) => setSettings({ ...settings, logoUrl: url })}
-            />
-
-            <ImageUpload
-              label="Ana Sayfa Giriş (Hero) Görseli"
-              description="Ana sayfanın en üst açılış ekranında tam ekran gösterilen klinik karşılama fotoğrafı"
-              folder="corporate"
-              value={settings.heroShowroomImageUrl || ''}
-              onChange={(url) =>
-                setSettings({ ...settings, heroShowroomImageUrl: url })
-              }
-            />
-
-            <ImageUpload
-              label="Hakkımızda / Biyografi Görseli"
-              description="Hakkımda (Akademik Kariyer & Biyografi) bölümünde sol sütunda yer alan doktor portre fotoğrafı"
-              folder="corporate"
-              value={settings.doctorPortraitUrl || ''}
-              onChange={(url) =>
-                setSettings({ ...settings, doctorPortraitUrl: url })
-              }
-            />
-
-            <ImageUpload
-              label="Health Türkiye Sertifikası"
-              description="Uluslararası Sağlık Turizmi / Health Türkiye resmi sertifika görseli"
-              folder="corporate"
-              value={settings.healthTurkiyeCertificateUrl || ''}
-              onChange={(url) =>
-                setSettings({ ...settings, healthTurkiyeCertificateUrl: url })
-              }
-            />
-
-            <ImageUpload
-              label="T.C. Sağlık Bakanlığı Yetki Belgesi"
-              description="Sağlık Bakanlığı resmi ruhsat ve yetki belgesi görseli"
-              folder="corporate"
-              value={settings.ministryCertificateUrl || ''}
-              onChange={(url) =>
-                setSettings({ ...settings, ministryCertificateUrl: url })
-              }
-            />
-          </div>
-        </div>
-
         {/* Contact Info Card */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-4">
           <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base border-b border-slate-100 pb-3">
@@ -361,57 +290,6 @@ export default function AdminSettingsPage() {
                 className="w-full px-3.5 py-2.5 text-sm font-mono bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
               />
             </div>
-          </div>
-        </div>
-
-        {/* Doctor Bio Card */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-7 shadow-sm space-y-4">
-          <h3 className="font-heading font-bold tracking-tight text-slate-900 text-base border-b border-slate-100 pb-3">
-            Prof. Dr. Mustafa Özdemir Biyografi Metni
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Hekim Adı
-              </label>
-              <input
-                type="text"
-                value={settings.doctorName}
-                onChange={(e) =>
-                  setSettings({ ...settings, doctorName: e.target.value })
-                }
-                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Unvan
-              </label>
-              <input
-                type="text"
-                value={settings.doctorTitle}
-                onChange={(e) =>
-                  setSettings({ ...settings, doctorTitle: e.target.value })
-                }
-                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">
-              Biyografi (HTML Destekli)
-            </label>
-            <textarea
-              rows={6}
-              value={settings.doctorBio}
-              onChange={(e) =>
-                setSettings({ ...settings, doctorBio: e.target.value })
-              }
-              className="w-full px-3.5 py-2.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
-            />
           </div>
         </div>
 

@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import AppointmentForm from '@/components/public/AppointmentForm';
-import { settingsService } from '@/services';
 import { resolveMediaUrl } from '@/utils/cn';
 import { Award, GraduationCap, Building2, BookOpen } from 'lucide-react';
 
@@ -13,12 +12,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function AboutPage() {
-  const settings = await settingsService.getSettings();
-  const portraitUrl = resolveMediaUrl(
-    settings?.doctorPortraitUrl,
-    '/uploads/corporate/doctor-portrait.jpg'
-  );
+export default function AboutPage() {
+  const portraitUrl = resolveMediaUrl('/uploads/corporate/doctor-portrait.jpg');
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen py-10 sm:py-16">
@@ -31,11 +26,10 @@ export default async function AboutPage() {
               <span>Akademik ve Klinik Özgeçmiş</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-serif font-bold text-slate-900 tracking-tight">
-              {settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+              Prof. Dr. Mustafa Özdemir
             </h1>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-              {settings?.doctorTitle ||
-                'Dermatoloji (Deri ve Zührevi Hastalıklar) Uzmanı • Akademisyen • Klinik Araştırmacı'}
+              Dermatoloji (Deri ve Zührevi Hastalıklar) Uzmanı • Akademisyen • Klinik Araştırmacı
             </p>
           </div>
           {portraitUrl && (
@@ -44,7 +38,7 @@ export default async function AboutPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={portraitUrl}
-                  alt={settings?.doctorName || 'Prof. Dr. Mustafa Özdemir'}
+                  alt="Prof. Dr. Mustafa Özdemir"
                   className="w-full h-full object-cover object-top"
                 />
               </div>

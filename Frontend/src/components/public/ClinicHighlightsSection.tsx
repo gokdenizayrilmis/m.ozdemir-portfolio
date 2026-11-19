@@ -63,7 +63,7 @@ const RIGHT_FEATURES = [
 export default function ClinicHighlightsSection({
   settings,
 }: ClinicHighlightsSectionProps) {
-  const doctorName = settings?.doctorName || 'Prof. Dr. Mustafa Özdemir';
+  const doctorName = 'Prof. Dr. Mustafa Özdemir';
   const whatsappNumber = settings?.whatsAppNumber || '905522656436';
   const phoneNumber = settings?.phoneNumbers?.[0] || '+905522656436';
 

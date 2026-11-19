@@ -26,13 +26,13 @@ export default async function HomePage() {
       <TreatmentsShowcase categories={categories} treatments={treatments} />
 
       {/* 3. Hakkımda Alanı — Akademik Kariyer & Uzmanlık */}
-      <DoctorAboutSection settings={settings} />
+      <DoctorAboutSection />
 
       {/* 4. Klinik Süreç & Tanışma Alanı — 6 Madde + Merkez Görsel */}
       <ClinicHighlightsSection settings={settings} />
 
       {/* 5. Uluslararası Sağlık Turizmi — Yetki Belgesi & Health Türkiye Profili */}
-      <HealthTourismSection settings={settings} />
+      <HealthTourismSection />
 
       {/* 6. İletişim & Konum — Adres, Bilgiler ve Klinik Haritası */}
       <ContactSection settings={settings} />

@@ -75,15 +75,6 @@ export interface SocialMediaLinks {
 export interface SiteSettings {
   id: string;
   clinicName: string;
-  doctorName: string;
-  doctorTitle: string;
-  doctorBio: string;
-  logoUrl: string;
-  doctorPortraitUrl: string;
-  heroShowroomImageUrl: string;
-  heroVideoUrl?: string;
-  healthTurkiyeCertificateUrl: string;
-  ministryCertificateUrl: string;
   address: string;
   phoneNumbers: string[];
   whatsAppNumber: string;
