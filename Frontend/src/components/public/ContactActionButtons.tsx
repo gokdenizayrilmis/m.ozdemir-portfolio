@@ -16,7 +16,7 @@ export interface ContactActionButtonsProps {
 }
 
 export const CALL_BUTTON_BASE_CLASS =
-  'bg-stone-900 hover:bg-stone-800 active:bg-stone-800 text-white font-semibold rounded-xl shadow-md inline-flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-all';
+  'bg-[#B8864B] hover:bg-[#a6763f] active:bg-[#a6763f] text-white font-semibold rounded-xl shadow-md inline-flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-all';
 
 export const WHATSAPP_BUTTON_BASE_CLASS =
   'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-700 text-white font-semibold rounded-xl shadow-md inline-flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-all';
