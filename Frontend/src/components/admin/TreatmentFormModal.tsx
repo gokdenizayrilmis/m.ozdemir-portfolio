@@ -81,6 +81,10 @@ export default function TreatmentFormModal({
         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         onClick={(e) => e.stopPropagation()}
         onSubmit={(e) => {
+          if (saving) {
+            e.preventDefault();
+            return;
+          }
           if (!treatment.title?.trim() || !treatment.slug?.trim() || !treatment.summary?.trim()) {
             setModalTab('content');
           }

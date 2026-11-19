@@ -5,6 +5,8 @@ import { UtmData } from '@/types';
 import { leadService } from '@/services';
 
 const STORAGE_KEY = 'clinic_utm_data';
+const CLICK_COOLDOWN_MS = 5000;
+const recentClickTimestamps = new Map<string, number>();
 
 export function initializeUtmTracking(): void {
   if (typeof window === 'undefined') return;
@@ -42,6 +44,15 @@ export function trackConversionClick(
   if (typeof window === 'undefined') return;
 
   const currentPath = sourcePageSlug || window.location.pathname;
+  const throttleKey = `${conversionType}:${currentPath}`;
+  const now = Date.now();
+  const lastTrackedAt = recentClickTimestamps.get(throttleKey) ?? 0;
+
+  if (now - lastTrackedAt < CLICK_COOLDOWN_MS) {
+    return;
+  }
+  recentClickTimestamps.set(throttleKey, now);
+
   const utm = getStoredUtmData();
 
   try {

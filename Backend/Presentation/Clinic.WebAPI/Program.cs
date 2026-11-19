@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 using Clinic.Application;
@@ -8,6 +9,7 @@ using Clinic.Infrastructure;
 using Clinic.Persistence;
 using Clinic.Persistence.Context;
 using Clinic.WebAPI.Middlewares;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 
 const string NextJsCorsPolicy = "NextJsCorsPolicy";
@@ -22,6 +24,13 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // 2. Add Controllers, OpenAPI & Response Compression (Brotli + Gzip)
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 builder.Services.AddResponseCompression(options =>
 {
@@ -40,20 +49,39 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
     options.Level = CompressionLevel.Fastest;
 });
 
-// 3. Configure IP-based Rate Limiting for Public Endpoints
+// 3. Configure Tiered Rate Limiting (Global + Public + Auth + Admin)
+var jsonErrorOptions = new JsonSerializerOptions
+{
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+};
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = async (context, cancellationToken) =>
     {
-        context.HttpContext.Response.ContentType = "application/json";
-        var response = Result.Failure("Çok fazla istek gönderdiniz. Lütfen kısa bir süre sonra tekrar deneyiniz.");
-        var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+            var retrySeconds = Math.Max(1, (int)Math.Ceiling(retryAfter.TotalSeconds));
+            context.HttpContext.Response.Headers.RetryAfter = retrySeconds.ToString();
+        }
+
+        context.HttpContext.Response.ContentType = "application/json";
+        var response = Result.Failure("Çok fazla istek gönderdiniz. Lütfen birkaç saniye bekleyip tekrar deneyin.");
+        var json = JsonSerializer.Serialize(response, jsonErrorOptions);
         await context.HttpContext.Response.WriteAsync(json, cancellationToken);
     };
+
+    // Global safety umbrella: 200 req/min per IP across the entire API
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: GetClientIpKey(httpContext),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 200,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
 
     options.AddPolicy(RateLimitPolicies.AuthLogin, httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
@@ -75,12 +103,66 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 
-    options.AddPolicy(RateLimitPolicies.LeadsTrack, httpContext =>
+    options.AddPolicy(RateLimitPolicies.AuthSensitive, httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: GetClientIpKey(httpContext),
+            partitionKey: GetAdminOrIpKey(httpContext),
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 30,
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy(RateLimitPolicies.LeadsTrack, httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: GetClientIpKey(httpContext),
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 4,
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy(RateLimitPolicies.PublicRead, httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: GetClientIpKey(httpContext),
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 120,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 4,
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy(RateLimitPolicies.AdminRead, httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: GetAdminOrIpKey(httpContext),
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 4,
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy(RateLimitPolicies.AdminWrite, httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: GetAdminOrIpKey(httpContext),
+            factory: _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 25,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 4,
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy(RateLimitPolicies.AdminHeavy, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: GetAdminOrIpKey(httpContext),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -113,7 +195,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials()
+              .WithExposedHeaders("Retry-After");
     });
 });
 
@@ -140,6 +223,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // 6. Configure HTTP Request Pipeline
+app.UseForwardedHeaders();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseResponseCompression();
 
@@ -150,10 +234,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseCors(NextJsCorsPolicy);
-app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 
@@ -161,3 +245,11 @@ app.Run();
 
 static string GetClientIpKey(HttpContext context) =>
     context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+static string GetAdminOrIpKey(HttpContext context)
+{
+    var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    return !string.IsNullOrWhiteSpace(userId)
+        ? $"user:{userId}"
+        : $"ip:{GetClientIpKey(context)}";
+}

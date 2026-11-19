@@ -72,6 +72,10 @@ export default function BlogFormModal({
         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         onClick={(e) => e.stopPropagation()}
         onSubmit={(e) => {
+          if (saving) {
+            e.preventDefault();
+            return;
+          }
           if (!blog.title?.trim() || !blog.slug?.trim() || !blog.summary?.trim()) {
             setModalTab('content');
           }

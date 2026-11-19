@@ -27,7 +27,12 @@ public static class RateLimitPolicies
 {
     public const string AuthLogin = "auth-login";
     public const string AuthRefresh = "auth-refresh";
+    public const string AuthSensitive = "auth-sensitive";
     public const string LeadsTrack = "leads-track";
+    public const string PublicRead = "public-read";
+    public const string AdminRead = "admin-read";
+    public const string AdminWrite = "admin-write";
+    public const string AdminHeavy = "admin-heavy";
 }
 
 public static class AuthConstants

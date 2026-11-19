@@ -26,6 +26,7 @@ public class LeadsController : BaseApiController
 
     [Authorize]
     [HttpGet("summary")]
+    [EnableRateLimiting(RateLimitPolicies.AdminRead)]
     public async Task<IActionResult> GetSummary(
         [FromQuery] string range = "30d",
         CancellationToken cancellationToken = default)
@@ -36,6 +37,7 @@ public class LeadsController : BaseApiController
 
     [Authorize]
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicies.AdminRead)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string range = "all",
         [FromQuery] string? type = null,
@@ -50,6 +52,7 @@ public class LeadsController : BaseApiController
 
     [Authorize]
     [HttpGet("export")]
+    [EnableRateLimiting(RateLimitPolicies.AdminHeavy)]
     public async Task<IActionResult> ExportCsv(
         [FromQuery] string range = "all",
         [FromQuery] string? type = null,

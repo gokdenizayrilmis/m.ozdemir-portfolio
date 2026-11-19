@@ -1,13 +1,16 @@
 using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Common.Models;
+using Clinic.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Clinic.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
+[EnableRateLimiting(RateLimitPolicies.AdminHeavy)]
 public class MediaController : ControllerBase
 {
     private readonly IImageStorageService _imageStorageService;

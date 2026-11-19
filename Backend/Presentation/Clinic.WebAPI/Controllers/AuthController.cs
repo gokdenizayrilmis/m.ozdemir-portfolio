@@ -55,6 +55,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
+    [EnableRateLimiting(RateLimitPolicies.AuthRefresh)]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken = default)
     {
         var rawRefreshToken = Request.Cookies[AuthConstants.RefreshTokenCookieName];
@@ -65,6 +66,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("change-password")]
+    [EnableRateLimiting(RateLimitPolicies.AuthSensitive)]
     public async Task<IActionResult> ChangePassword(
         [FromBody] ChangePasswordRequestDto request,
         CancellationToken cancellationToken = default)

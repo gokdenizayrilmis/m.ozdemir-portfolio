@@ -1,6 +1,8 @@
 using Clinic.Application.Features.Categories;
+using Clinic.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Clinic.WebAPI.Controllers;
 
@@ -11,6 +13,7 @@ public class CategoriesController : BaseApiController
     }
 
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicies.PublicRead)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(new GetAllCategoriesQuery(), cancellationToken);
@@ -18,6 +21,7 @@ public class CategoriesController : BaseApiController
     }
 
     [HttpGet("{slug}")]
+    [EnableRateLimiting(RateLimitPolicies.PublicRead)]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(new GetCategoryBySlugQuery(slug), cancellationToken);

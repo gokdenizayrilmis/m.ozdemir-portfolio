@@ -147,6 +147,33 @@ class HttpClient {
         signal: fetchOptions.signal ?? controller.signal,
       });
 
+      // 429 Too Many Requests Handling (never trigger silent refresh)
+      if (res.status === 429) {
+        const retryAfterHeader = res.headers.get('Retry-After');
+        const retrySeconds = retryAfterHeader
+          ? parseInt(retryAfterHeader, 10)
+          : NaN;
+        let serverMessage = '';
+        try {
+          const json = (await res.json()) as Result<T>;
+          serverMessage = json?.message || '';
+        } catch {
+          // Ignore non-JSON 429 body
+        }
+
+        const message =
+          !Number.isNaN(retrySeconds) && retrySeconds > 0
+            ? `Çok fazla işlem yaptınız. Lütfen ${retrySeconds} saniye sonra tekrar deneyin.`
+            : serverMessage ||
+              'Çok fazla işlem yaptınız. Lütfen birkaç saniye bekleyip tekrar deneyin.';
+
+        return {
+          isSuccess: false,
+          message,
+          errors: ['TooManyRequests'],
+        };
+      }
+
       // 401 Interceptor with Single Promise Lock
       if (res.status === 401 && isClient && !isAuthBypassEndpoint && !_isRetry) {
         const newAccessToken = await this.tryRefreshAccessToken();

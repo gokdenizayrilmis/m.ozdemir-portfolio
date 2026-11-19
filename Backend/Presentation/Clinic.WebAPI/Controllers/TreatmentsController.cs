@@ -1,7 +1,9 @@
 using Clinic.Application.Features.Treatments;
+using Clinic.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Clinic.WebAPI.Controllers;
 
@@ -12,6 +14,7 @@ public class TreatmentsController : BaseApiController
     }
 
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicies.PublicRead)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? categorySlug = null,
         [FromQuery] bool onlyPublished = true,
@@ -22,6 +25,7 @@ public class TreatmentsController : BaseApiController
     }
 
     [HttpGet("{slug}")]
+    [EnableRateLimiting(RateLimitPolicies.PublicRead)]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(new GetTreatmentBySlugQuery(slug), cancellationToken);
@@ -30,6 +34,7 @@ public class TreatmentsController : BaseApiController
 
     [Authorize]
     [HttpPost]
+    [EnableRateLimiting(RateLimitPolicies.AdminWrite)]
     public async Task<IActionResult> Create([FromBody] CreateTreatmentCommand command, CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(command, cancellationToken);
@@ -38,6 +43,7 @@ public class TreatmentsController : BaseApiController
 
     [Authorize]
     [HttpPut("{id}")]
+    [EnableRateLimiting(RateLimitPolicies.AdminWrite)]
     public async Task<IActionResult> Update(string id, [FromBody] UpdateTreatmentCommand command, CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(command with { Id = id }, cancellationToken);
@@ -46,6 +52,7 @@ public class TreatmentsController : BaseApiController
 
     [Authorize]
     [HttpPatch("{id}/toggle-publish")]
+    [EnableRateLimiting(RateLimitPolicies.AdminWrite)]
     public async Task<IActionResult> TogglePublish(string id, CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(new ToggleTreatmentPublishCommand(id), cancellationToken);
@@ -54,6 +61,7 @@ public class TreatmentsController : BaseApiController
 
     [Authorize]
     [HttpDelete("{id}")]
+    [EnableRateLimiting(RateLimitPolicies.AdminWrite)]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken = default)
     {
         var result = await Mediator.Send(new DeleteTreatmentCommand(id), cancellationToken);
