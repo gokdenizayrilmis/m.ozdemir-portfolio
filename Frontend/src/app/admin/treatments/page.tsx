@@ -47,6 +47,7 @@ export default function AdminTreatmentsPage() {
     useState<Partial<Treatment> | null>(null);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [orderWarning, setOrderWarning] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<{
@@ -80,19 +81,29 @@ export default function AdminTreatmentsPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen]);
 
+  const getMaxOrderForCategory = (catSlug: string, excludeId?: string) => {
+    const othersCount = treatments.filter(
+      (t) => t.categorySlug === catSlug && t.id !== excludeId
+    ).length;
+    return othersCount + 1;
+  };
+
   const handleOpenCreate = () => {
+    const defaultCategorySlug = categories[0]?.slug || 'dermatoloji';
+    const nextOrder = getMaxOrderForCategory(defaultCategorySlug);
     setModalError(null);
+    setOrderWarning(null);
     setModalTab('content');
     setSlugManuallyEdited(false);
     setEditingTreatment({
       title: '',
       slug: '',
-      categorySlug: categories[0]?.slug || 'dermatoloji',
+      categorySlug: defaultCategorySlug,
       categoryId: categories[0]?.id || '',
       summary: '',
       htmlContent: '<h2>Tedavi Hakkında</h2>\n<p>Tedavi detay açıklaması buraya gelecek...</p>',
       coverImageUrl: '/uploads/treatments/lazerle-leke-tedavisi.jpg',
-      displayOrder: 1,
+      displayOrder: nextOrder,
       isPublished: true,
       faqs: [],
       seo: {
@@ -108,6 +119,7 @@ export default function AdminTreatmentsPage() {
 
   const handleOpenEdit = (t: Treatment) => {
     setModalError(null);
+    setOrderWarning(null);
     setModalTab('content');
     setSlugManuallyEdited(true);
     setEditingTreatment({
@@ -625,7 +637,7 @@ export default function AdminTreatmentsPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                       <div>
                         <label className="block font-semibold text-slate-700 mb-1">
                           Uzmanlık Kategorisi
@@ -633,13 +645,25 @@ export default function AdminTreatmentsPage() {
                         <select
                           value={editingTreatment.categorySlug || 'dermatoloji'}
                           onChange={(e) => {
+                            const nextCatSlug = e.target.value;
                             const selected = categories.find(
-                              (c) => c.slug === e.target.value
+                              (c) => c.slug === nextCatSlug
                             );
+                            const nextMax = getMaxOrderForCategory(
+                              nextCatSlug,
+                              editingTreatment.id
+                            );
+                            setOrderWarning(null);
                             setEditingTreatment({
                               ...editingTreatment,
-                              categorySlug: e.target.value,
+                              categorySlug: nextCatSlug,
                               categoryId: selected?.id || '',
+                              displayOrder: !editingTreatment.id
+                                ? nextMax
+                                : Math.min(
+                                    editingTreatment.displayOrder || nextMax,
+                                    nextMax
+                                  ),
                             });
                           }}
                           className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none"
@@ -653,27 +677,74 @@ export default function AdminTreatmentsPage() {
                       </div>
 
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">
-                          Gösterim Sırası
-                        </label>
-                        <input
-                          type="number"
-                          min={1}
-                          value={editingTreatment.displayOrder || 1}
-                          onChange={(e) =>
-                            setEditingTreatment({
-                              ...editingTreatment,
-                              displayOrder: Math.max(
-                                1,
-                                parseInt(e.target.value, 10) || 1
-                              ),
-                            })
-                          }
-                          className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none tabular-nums"
-                        />
+                        {(() => {
+                          const maxOrder = getMaxOrderForCategory(
+                            editingTreatment.categorySlug || 'dermatoloji',
+                            editingTreatment.id
+                          );
+                          return (
+                            <>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block font-semibold text-slate-700">
+                                  Gösterim Sırası
+                                </label>
+                                <span className="text-[11px] font-medium text-slate-400 tabular-nums">
+                                  1 – {maxOrder} arası
+                                </span>
+                              </div>
+                              <input
+                                type="number"
+                                min={1}
+                                max={maxOrder}
+                                value={editingTreatment.displayOrder || 1}
+                                onChange={(e) => {
+                                  const raw = parseInt(e.target.value, 10);
+                                  if (Number.isNaN(raw)) {
+                                    setOrderWarning(null);
+                                    setEditingTreatment({
+                                      ...editingTreatment,
+                                      displayOrder: 1,
+                                    });
+                                    return;
+                                  }
+
+                                  if (raw > maxOrder) {
+                                    setOrderWarning(
+                                      `Bu kategoride en fazla ${maxOrder}. sıra seçilebilir; ${maxOrder} olarak ayarlandı.`
+                                    );
+                                    setEditingTreatment({
+                                      ...editingTreatment,
+                                      displayOrder: maxOrder,
+                                    });
+                                  } else if (raw < 1) {
+                                    setOrderWarning(
+                                      'Gösterim sırası 1’den küçük olamaz.'
+                                    );
+                                    setEditingTreatment({
+                                      ...editingTreatment,
+                                      displayOrder: 1,
+                                    });
+                                  } else {
+                                    setOrderWarning(null);
+                                    setEditingTreatment({
+                                      ...editingTreatment,
+                                      displayOrder: raw,
+                                    });
+                                  }
+                                }}
+                                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none tabular-nums"
+                              />
+                              {orderWarning && (
+                                <p className="mt-1.5 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200/80 rounded-lg px-2.5 py-1 leading-snug">
+                                  {orderWarning}
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
 
-                      <div className="pb-1.5">
+                      <div className="sm:pt-8">
                         <button
                           type="button"
                           onClick={() =>

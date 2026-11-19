@@ -7,6 +7,54 @@ using MediatR;
 
 namespace Clinic.Application.Features.Treatments;
 
+internal static class TreatmentOrderHelper
+{
+    public static async Task<int> ReorderAndSaveSiblingsAsync(
+        ITreatmentRepository repository,
+        string categorySlug,
+        Treatment? currentTreatment,
+        int requestedOrder,
+        CancellationToken cancellationToken)
+    {
+        var allInCategory = await repository.GetAllAsync(categorySlug, onlyPublished: false, cancellationToken);
+        var others = currentTreatment is null
+            ? allInCategory
+            : allInCategory.Where(t => t.Id != currentTreatment.Id).ToList();
+
+        var maxOrder = currentTreatment is null ? others.Count : others.Count + 1;
+        var clampedOrder = currentTreatment is null
+            ? 0
+            : Math.Clamp(requestedOrder, 1, Math.Max(1, maxOrder));
+
+        var ordered = new List<Treatment>(others);
+        if (currentTreatment is not null)
+        {
+            ordered.Insert(clampedOrder - 1, currentTreatment);
+        }
+
+        var now = DateTime.UtcNow;
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            var expectedOrder = i + 1;
+            var item = ordered[i];
+            if (currentTreatment is not null && item.Id == currentTreatment.Id)
+            {
+                item.DisplayOrder = expectedOrder;
+                continue;
+            }
+
+            if (item.DisplayOrder != expectedOrder)
+            {
+                item.DisplayOrder = expectedOrder;
+                item.UpdatedAt = now;
+                await repository.UpdateAsync(item, cancellationToken);
+            }
+        }
+
+        return clampedOrder;
+    }
+}
+
 // 1. GetAllTreatmentsQuery
 public record GetAllTreatmentsQuery(string? CategorySlug = null, bool OnlyPublished = true)
     : IRequest<Result<List<Treatment>>>;
@@ -99,12 +147,13 @@ public class CreateTreatmentCommandHandler : IRequestHandler<CreateTreatmentComm
             return Result<Treatment>.Failure($"'{normalizedSlug}' URL slug değeri zaten başka bir tedavide kullanılıyor.");
         }
 
+        var normalizedCategorySlug = request.CategorySlug.Trim().ToLowerInvariant();
         var treatment = new Treatment
         {
             Title = request.Title.Trim(),
             Slug = normalizedSlug,
             CategoryId = request.CategoryId,
-            CategorySlug = request.CategorySlug.Trim().ToLowerInvariant(),
+            CategorySlug = normalizedCategorySlug,
             Summary = request.Summary.Trim(),
             HtmlContent = request.HtmlContent,
             CoverImageUrl = request.CoverImageUrl,
@@ -119,6 +168,14 @@ public class CreateTreatmentCommandHandler : IRequestHandler<CreateTreatmentComm
         };
 
         await _repository.CreateAsync(treatment, cancellationToken);
+        treatment.DisplayOrder = await TreatmentOrderHelper.ReorderAndSaveSiblingsAsync(
+            _repository,
+            normalizedCategorySlug,
+            treatment,
+            request.DisplayOrder,
+            cancellationToken);
+        await _repository.UpdateAsync(treatment, cancellationToken);
+
         await _revalidationService.RevalidatePathsAsync(new[] { "/", $"/{treatment.Slug}", $"/kategori/{treatment.CategorySlug}" }, cancellationToken);
 
         return Result<Treatment>.Success(treatment, "Tedavi sayfası başarıyla oluşturuldu.");
@@ -181,20 +238,38 @@ public class UpdateTreatmentCommandHandler : IRequestHandler<UpdateTreatmentComm
             return Result<Treatment>.Failure($"'{normalizedSlug}' URL slug değeri başka bir tedavide kullanılıyor.");
         }
 
+        var newCategorySlug = request.CategorySlug.Trim().ToLowerInvariant();
         existing.Title = request.Title.Trim();
         existing.Slug = normalizedSlug;
         existing.CategoryId = request.CategoryId;
-        existing.CategorySlug = request.CategorySlug.Trim().ToLowerInvariant();
+        existing.CategorySlug = newCategorySlug;
         existing.Summary = request.Summary.Trim();
         existing.HtmlContent = request.HtmlContent;
         existing.CoverImageUrl = request.CoverImageUrl;
-        existing.DisplayOrder = request.DisplayOrder;
         existing.IsPublished = request.IsPublished;
         existing.Faqs = request.Faqs ?? new List<FaqItem>();
         existing.Seo = request.Seo ?? existing.Seo;
         existing.UpdatedAt = DateTime.UtcNow;
 
+        existing.DisplayOrder = await TreatmentOrderHelper.ReorderAndSaveSiblingsAsync(
+            _repository,
+            newCategorySlug,
+            existing,
+            request.DisplayOrder,
+            cancellationToken);
+
         await _repository.UpdateAsync(existing, cancellationToken);
+
+        if (!string.Equals(oldCategorySlug, newCategorySlug, StringComparison.OrdinalIgnoreCase))
+        {
+            await TreatmentOrderHelper.ReorderAndSaveSiblingsAsync(
+                _repository,
+                oldCategorySlug,
+                null,
+                0,
+                cancellationToken);
+        }
+
         await _revalidationService.RevalidatePathsAsync(
             new[] { "/", $"/{oldSlug}", $"/{existing.Slug}", $"/kategori/{oldCategorySlug}", $"/kategori/{existing.CategorySlug}" },
             cancellationToken);
@@ -231,6 +306,12 @@ public class DeleteTreatmentCommandHandler : IRequestHandler<DeleteTreatmentComm
         }
 
         await _repository.DeleteAsync(request.Id, cancellationToken);
+        await TreatmentOrderHelper.ReorderAndSaveSiblingsAsync(
+            _repository,
+            existing.CategorySlug,
+            null,
+            0,
+            cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(existing.CoverImageUrl) &&
             !existing.CoverImageUrl.Contains("/uploads/corporate/", StringComparison.OrdinalIgnoreCase))
