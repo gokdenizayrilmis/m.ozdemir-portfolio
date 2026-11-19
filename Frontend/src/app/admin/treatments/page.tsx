@@ -35,10 +35,12 @@ export default function AdminTreatmentsPage() {
     type: 'success' | 'error';
   } | null>(null);
 
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
   const loadData = async () => {
     setLoading(true);
     const [tList, cList] = await Promise.all([
-      treatmentService.getAll(),
+      treatmentService.getAll(undefined, false),
       categoryService.getAll(),
     ]);
     setTreatments(tList);
@@ -119,6 +121,24 @@ export default function AdminTreatmentsPage() {
     }
   };
 
+  const handleTogglePublish = async (t: Treatment) => {
+    setTogglingId(t.id);
+    const res = await treatmentService.togglePublish(t.id);
+    setTogglingId(null);
+
+    if (res.isSuccess && res.data) {
+      setTreatments((prev) =>
+        prev.map((item) => (item.id === t.id ? res.data! : item))
+      );
+      setStatusMessage({
+        text: res.message || 'Yayın durumu güncellendi.',
+        type: 'success',
+      });
+    } else {
+      alert(res.message || 'Yayın durumu değiştirilemedi.');
+    }
+  };
+
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`'${title}' tedavisini silmek istediğinize emin misiniz?`))
       return;
@@ -152,8 +172,8 @@ export default function AdminTreatmentsPage() {
             Tedavi Sayfaları ({treatments.length})
           </h1>
           <p className="text-xs text-slate-500">
-            39 klinik tedaviyi yönetin, Rank Math tarzı SEO başlıklarını ve
-            Google FAQ sorularını düzenleyin
+            {treatments.length} klinik tedaviyi yönetin, Rank Math tarzı SEO
+            başlıklarını ve Google FAQ sorularını düzenleyin
           </p>
         </div>
         <button
@@ -240,15 +260,38 @@ export default function AdminTreatmentsPage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
-                      {t.isPublished ? (
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold text-[10px]">
-                          Yayında
+                      <button
+                        type="button"
+                        disabled={togglingId === t.id}
+                        onClick={() => handleTogglePublish(t)}
+                        title={
+                          t.isPublished
+                            ? 'Yayında (Gizlemek için tıklayın)'
+                            : 'Taslak (Yayınlamak için tıklayın)'
+                        }
+                        className="inline-flex items-center gap-2 focus:outline-none disabled:opacity-50"
+                      >
+                        <span
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                            t.isPublished ? 'bg-emerald-600' : 'bg-slate-300'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              t.isPublished ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
                         </span>
-                      ) : (
-                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full text-[10px]">
-                          Taslak
+                        <span
+                          className={`text-[11px] font-semibold ${
+                            t.isPublished
+                              ? 'text-emerald-700'
+                              : 'text-slate-500'
+                          }`}
+                        >
+                          {t.isPublished ? 'Yayında' : 'Taslak'}
                         </span>
-                      )}
+                      </button>
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-2">
                       <Link

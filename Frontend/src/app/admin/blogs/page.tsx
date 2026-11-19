@@ -16,10 +16,11 @@ export default function AdminBlogsPage() {
     null
   );
   const [saving, setSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const loadBlogs = async () => {
     setLoading(true);
-    const data = await blogService.getAll();
+    const data = await blogService.getAll(undefined, false);
     setBlogs(data);
     setLoading(false);
   };
@@ -75,6 +76,20 @@ export default function AdminBlogsPage() {
       loadBlogs();
     } else {
       alert(res.message || 'Kayıt sırasında hata oluştu.');
+    }
+  };
+
+  const handleTogglePublish = async (b: BlogPost) => {
+    setTogglingId(b.id);
+    const res = await blogService.togglePublish(b.id);
+    setTogglingId(null);
+
+    if (res.isSuccess && res.data) {
+      setBlogs((prev) =>
+        prev.map((item) => (item.id === b.id ? res.data! : item))
+      );
+    } else {
+      alert(res.message || 'Yayın durumu değiştirilemedi.');
     }
   };
 
@@ -148,15 +163,38 @@ export default function AdminBlogsPage() {
                       {new Date(b.publishedAt).toLocaleDateString('tr-TR')}
                     </td>
                     <td className="py-3.5 px-4">
-                      {b.isPublished ? (
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold text-[10px]">
-                          Yayında
+                      <button
+                        type="button"
+                        disabled={togglingId === b.id}
+                        onClick={() => handleTogglePublish(b)}
+                        title={
+                          b.isPublished
+                            ? 'Yayında (Gizlemek için tıklayın)'
+                            : 'Taslak (Yayınlamak için tıklayın)'
+                        }
+                        className="inline-flex items-center gap-2 focus:outline-none disabled:opacity-50"
+                      >
+                        <span
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                            b.isPublished ? 'bg-emerald-600' : 'bg-slate-300'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              b.isPublished ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
                         </span>
-                      ) : (
-                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full text-[10px]">
-                          Taslak
+                        <span
+                          className={`text-[11px] font-semibold ${
+                            b.isPublished
+                              ? 'text-emerald-700'
+                              : 'text-slate-500'
+                          }`}
+                        >
+                          {b.isPublished ? 'Yayında' : 'Taslak'}
                         </span>
-                      )}
+                      </button>
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-2">
                       <Link
