@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Clinic.Application.Common.Interfaces;
 using Clinic.Infrastructure.Settings;
@@ -25,20 +26,36 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId),
+            new(ClaimTypes.NameIdentifier, userId),
             new(JwtRegisteredClaimNames.Email, email),
+            new(ClaimTypes.Email, email),
             new(ClaimTypes.Name, fullName),
             new(ClaimTypes.Role, role),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
+        var expiryMinutes = _jwtSettings.ExpiryMinutes > 0 ? _jwtSettings.ExpiryMinutes : 15;
+
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+            expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var randomBytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(randomBytes);
+    }
+
+    public string HashToken(string rawToken)
+    {
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
+        return Convert.ToHexString(hashBytes).ToLowerInvariant();
     }
 }
 
@@ -49,4 +66,3 @@ public class PasswordHasher : IPasswordHasher
     public bool VerifyPassword(string password, string passwordHash) =>
         BCrypt.Net.BCrypt.Verify(password, passwordHash);
 }
-

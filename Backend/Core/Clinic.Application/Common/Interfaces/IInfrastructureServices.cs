@@ -9,6 +9,8 @@ public interface IImageStorageService
 public interface IJwtTokenGenerator
 {
     string GenerateToken(string userId, string email, string fullName, string role);
+    string GenerateRefreshToken();
+    string HashToken(string rawToken);
 }
 
 public interface IPasswordHasher
@@ -21,4 +23,3 @@ public interface INextJsRevalidationService
 {
     Task RevalidatePathsAsync(IEnumerable<string> paths, CancellationToken cancellationToken = default);
 }
-

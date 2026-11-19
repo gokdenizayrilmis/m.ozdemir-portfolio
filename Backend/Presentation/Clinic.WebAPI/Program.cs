@@ -15,10 +15,26 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// 3. Configure CORS for Next.js Frontend
-var allowedOrigins = builder.Configuration
+// 3. Configure CORS for Next.js Frontend (Specific origins required for AllowCredentials)
+var configuredOrigins = builder.Configuration
     .GetSection("CorsSettings:AllowedOrigins")
-    .Get<string[]>() ?? new[] { "http://localhost:3000" };
+    .Get<string[]>() ?? Array.Empty<string>();
+
+var allowedOrigins = configuredOrigins
+    .Where(o => !string.IsNullOrWhiteSpace(o) && o != "*")
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
+if (allowedOrigins.Length == 0)
+{
+    allowedOrigins = new[]
+    {
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://drmustafaozdemir.com",
+        "https://www.drmustafaozdemir.com"
+    };
+}
 
 builder.Services.AddCors(options =>
 {

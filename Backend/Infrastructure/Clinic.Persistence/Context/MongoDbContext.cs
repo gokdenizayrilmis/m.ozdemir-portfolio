@@ -30,6 +30,7 @@ public class MongoDbContext
     public IMongoCollection<SiteSettings> SiteSettings => _database.GetCollection<SiteSettings>("site_settings");
     public IMongoCollection<Lead> Leads => _database.GetCollection<Lead>("leads");
     public IMongoCollection<AdminUser> AdminUsers => _database.GetCollection<AdminUser>("admin_users");
+    public IMongoCollection<RefreshToken> RefreshTokens => _database.GetCollection<RefreshToken>("refresh_tokens");
 
     private static void RegisterClassMaps()
     {
@@ -69,6 +70,9 @@ public class MongoDbContext
             if (!BsonClassMap.IsClassMapRegistered(typeof(AdminUser)))
                 BsonClassMap.RegisterClassMap<AdminUser>(cm => cm.AutoMap());
 
+            if (!BsonClassMap.IsClassMapRegistered(typeof(RefreshToken)))
+                BsonClassMap.RegisterClassMap<RefreshToken>(cm => cm.AutoMap());
+
             _mappingsRegistered = true;
         }
     }
@@ -99,6 +103,15 @@ public class MongoDbContext
             Builders<AdminUser>.IndexKeys.Ascending(x => x.Email),
             new CreateIndexOptions { Unique = true, Name = "idx_admin_users_email_unique" });
         await AdminUsers.Indexes.CreateOneAsync(adminEmailIndex, cancellationToken: cancellationToken);
+
+        var refreshTokenHashIndex = new CreateIndexModel<RefreshToken>(
+            Builders<RefreshToken>.IndexKeys.Ascending(x => x.TokenHash),
+            new CreateIndexOptions { Unique = true, Name = "idx_refresh_tokens_hash_unique" });
+        await RefreshTokens.Indexes.CreateOneAsync(refreshTokenHashIndex, cancellationToken: cancellationToken);
+
+        var refreshTokenUserIndex = new CreateIndexModel<RefreshToken>(
+            Builders<RefreshToken>.IndexKeys.Ascending(x => x.AdminUserId),
+            new CreateIndexOptions { Name = "idx_refresh_tokens_user" });
+        await RefreshTokens.Indexes.CreateOneAsync(refreshTokenUserIndex, cancellationToken: cancellationToken);
     }
 }
-

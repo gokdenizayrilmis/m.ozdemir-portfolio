@@ -14,6 +14,13 @@ public class AdminUserRepository : IAdminUserRepository
         _context = context;
     }
 
+    public async Task<AdminUser?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return await _context.AdminUsers
+            .Find(x => x.Id == id && !x.IsDeleted)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<AdminUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalized = email.Trim().ToLowerInvariant();
@@ -26,5 +33,12 @@ public class AdminUserRepository : IAdminUserRepository
     {
         await _context.AdminUsers.InsertOneAsync(adminUser, cancellationToken: cancellationToken);
     }
-}
 
+    public async Task UpdateAsync(AdminUser adminUser, CancellationToken cancellationToken = default)
+    {
+        await _context.AdminUsers.ReplaceOneAsync(
+            x => x.Id == adminUser.Id,
+            adminUser,
+            cancellationToken: cancellationToken);
+    }
+}

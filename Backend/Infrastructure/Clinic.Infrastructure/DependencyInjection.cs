@@ -41,6 +41,7 @@ public static class DependencyInjection
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
+                ClockSkew = TimeSpan.FromSeconds(30),
                 ValidIssuer = jwtSettings.Issuer,
                 ValidAudience = jwtSettings.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
@@ -52,4 +53,3 @@ public static class DependencyInjection
         return services;
     }
 }
-

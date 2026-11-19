@@ -22,8 +22,8 @@ public static class DependencyInjection
         services.AddScoped<ISiteSettingsRepository, SiteSettingsRepository>();
         services.AddScoped<ILeadRepository, LeadRepository>();
         services.AddScoped<IAdminUserRepository, AdminUserRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
         return services;
     }
 }
-
