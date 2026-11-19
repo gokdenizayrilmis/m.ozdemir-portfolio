@@ -47,6 +47,8 @@ export const leadService = {
         phoneClicks: 0,
         byCampaign: [],
         byPage: [],
+        dailyTrend: [],
+        previousPeriod: null,
       }
     );
   },

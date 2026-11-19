@@ -7,6 +7,8 @@ namespace Clinic.Persistence.Repositories;
 
 public class LeadRepository : ILeadRepository
 {
+    private static readonly string[] ValidClickTypes = { "WhatsAppClick", "PhoneClick" };
+
     private readonly MongoDbContext _context;
 
     public LeadRepository(MongoDbContext context)
@@ -16,10 +18,11 @@ public class LeadRepository : ILeadRepository
 
     public async Task<List<Lead>> GetFilteredAsync(
         DateTime? fromUtc = null,
+        DateTime? toUtc = null,
         string? conversionType = null,
         CancellationToken cancellationToken = default)
     {
-        var filter = BuildFilter(fromUtc, conversionType);
+        var filter = BuildFilter(fromUtc, toUtc, conversionType);
         return await _context.Leads
             .Find(filter)
             .SortByDescending(x => x.CreatedAt)
@@ -35,7 +38,7 @@ public class LeadRepository : ILeadRepository
     {
         var safePage = page < 1 ? 1 : page;
         var safePageSize = pageSize < 1 ? 25 : (pageSize > 200 ? 200 : pageSize);
-        var filter = BuildFilter(fromUtc, conversionType);
+        var filter = BuildFilter(fromUtc, null, conversionType);
 
         var totalCount = (int)await _context.Leads.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
         var items = await _context.Leads
@@ -53,7 +56,10 @@ public class LeadRepository : ILeadRepository
         await _context.Leads.InsertOneAsync(lead, cancellationToken: cancellationToken);
     }
 
-    private static FilterDefinition<Lead> BuildFilter(DateTime? fromUtc, string? conversionType)
+    private static FilterDefinition<Lead> BuildFilter(
+        DateTime? fromUtc,
+        DateTime? toUtc,
+        string? conversionType)
     {
         var builder = Builders<Lead>.Filter;
         var filter = builder.Eq(x => x.IsDeleted, false);
@@ -63,10 +69,20 @@ public class LeadRepository : ILeadRepository
             filter &= builder.Gte(x => x.CreatedAt, fromUtc.Value);
         }
 
+        if (toUtc.HasValue)
+        {
+            filter &= builder.Lt(x => x.CreatedAt, toUtc.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(conversionType) &&
             !string.Equals(conversionType, "all", StringComparison.OrdinalIgnoreCase))
         {
             filter &= builder.Eq(x => x.ConversionType, conversionType.Trim());
+        }
+        else
+        {
+            // Exclude any legacy ContactForm records so totalClicks == whatsAppClicks + phoneClicks
+            filter &= builder.In(x => x.ConversionType, ValidClickTypes);
         }
 
         return filter;

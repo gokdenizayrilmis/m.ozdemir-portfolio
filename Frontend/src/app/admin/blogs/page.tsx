@@ -5,12 +5,28 @@ import { blogService } from '@/services';
 import { BlogPost, SeoMetadata } from '@/types';
 import SeoMetaBox from '@/components/admin/SeoMetaBox';
 import ImageUpload from '@/components/admin/ImageUpload';
-import { Plus, Edit2, Trash2, Eye, Loader2, X, BookOpen } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Eye,
+  Loader2,
+  X,
+  BookOpen,
+  Image as ImageIcon,
+} from 'lucide-react';
 import Link from 'next/link';
+import { resolveMediaUrl } from '@/utils/cn';
 
 export default function AdminBlogsPage() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'published' | 'draft'
+  >('all');
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Partial<BlogPost> | null>(
     null
@@ -105,6 +121,20 @@ export default function AdminBlogsPage() {
     }
   };
 
+  const publishedCount = blogs.filter((b) => b.isPublished).length;
+  const draftCount = blogs.length - publishedCount;
+
+  const filtered = blogs.filter((b) => {
+    const matchesSearch =
+      b.title.toLowerCase().includes(search.toLowerCase()) ||
+      b.slug.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'published' && b.isPublished) ||
+      (statusFilter === 'draft' && !b.isPublished);
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -122,15 +152,66 @@ export default function AdminBlogsPage() {
         </div>
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-md transition"
+          className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition"
         >
           <Plus className="w-4 h-4" />
           <span>Yeni Makale Ekle</span>
         </button>
       </div>
 
+      {/* Search Bar & Status Filter Pills */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+          <input
+            type="text"
+            placeholder="Makale başlığı veya slug ile ara..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+          />
+        </div>
+
+        {/* Status Filter Pills */}
+        <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl text-xs tabular-nums self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+              statusFilter === 'all'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Tümü ({blogs.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('published')}
+            className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+              statusFilter === 'published'
+                ? 'bg-white text-emerald-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Yayında ({publishedCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('draft')}
+            className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+              statusFilter === 'draft'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Taslak ({draftCount})
+          </button>
+        </div>
+      </div>
+
       {/* Blogs Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -139,7 +220,7 @@ export default function AdminBlogsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase font-semibold">
+              <thead className="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-200/70">
                 <tr>
                   <th className="py-3 px-4">Makale Başlığı</th>
                   <th className="py-3 px-4">URL Slug</th>
@@ -150,78 +231,106 @@ export default function AdminBlogsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {blogs.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3.5 px-4 font-bold text-slate-900 max-w-xs truncate">
-                      {b.title}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-500">
-                      /blog/{b.slug}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-600">{b.author}</td>
-                    <td className="py-3.5 px-4 text-slate-500 tabular-nums">
-                      {new Date(b.publishedAt).toLocaleDateString('tr-TR')}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <button
-                        type="button"
-                        disabled={togglingId === b.id}
-                        onClick={() => handleTogglePublish(b)}
-                        title={
-                          b.isPublished
-                            ? 'Yayında (Gizlemek için tıklayın)'
-                            : 'Taslak (Yayınlamak için tıklayın)'
-                        }
-                        className="inline-flex items-center gap-2 focus:outline-none disabled:opacity-50"
-                      >
-                        <span
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                            b.isPublished ? 'bg-emerald-600' : 'bg-slate-300'
-                          }`}
+                {filtered.map((b) => {
+                  const thumbUrl = resolveMediaUrl(b.coverImageUrl);
+                  return (
+                    <tr
+                      key={b.id}
+                      className="hover:bg-slate-50/80 transition-colors"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          {thumbUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={thumbUrl}
+                              alt={b.title}
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-50"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
+                              <ImageIcon className="w-4 h-4" />
+                            </div>
+                          )}
+                          <span className="font-semibold text-slate-900 max-w-xs truncate">
+                            {b.title}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-500">
+                        /blog/{b.slug}
+                      </td>
+                      <td className="py-3 px-4 text-slate-600">{b.author}</td>
+                      <td className="py-3 px-4 text-slate-500 tabular-nums whitespace-nowrap">
+                        {new Date(b.publishedAt).toLocaleDateString('tr-TR')}
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          type="button"
+                          disabled={togglingId === b.id}
+                          onClick={() => handleTogglePublish(b)}
+                          title={
+                            b.isPublished
+                              ? 'Yayında (Gizlemek için tıklayın)'
+                              : 'Taslak (Yayınlamak için tıklayın)'
+                          }
+                          className="inline-flex items-center gap-2 focus:outline-none disabled:opacity-50"
                         >
                           <span
-                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              b.isPublished ? 'translate-x-4' : 'translate-x-0'
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                              b.isPublished ? 'bg-emerald-600' : 'bg-slate-300'
                             }`}
-                          />
-                        </span>
-                        <span
-                          className={`text-[11px] font-semibold ${
-                            b.isPublished
-                              ? 'text-emerald-700'
-                              : 'text-slate-500'
-                          }`}
-                        >
-                          {b.isPublished ? 'Yayında' : 'Taslak'}
-                        </span>
-                      </button>
-                    </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      <Link
-                        href={`/blog/${b.slug}`}
-                        target="_blank"
-                        className="p-1.5 text-slate-400 hover:text-slate-600 transition inline-block"
-                        title="Görüntüle"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleOpenEdit(b)}
-                        className="p-1.5 text-slate-400 hover:text-amber-700 transition"
-                        title="Düzenle"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(b.id, b.title)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 transition"
-                        title="Sil"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                b.isPublished
+                                  ? 'translate-x-4'
+                                  : 'translate-x-0'
+                              }`}
+                            />
+                          </span>
+                          <span
+                            className={`text-[11px] font-semibold ${
+                              b.isPublished
+                                ? 'text-emerald-700'
+                                : 'text-slate-500'
+                            }`}
+                          >
+                            {b.isPublished ? 'Yayında' : 'Taslak'}
+                          </span>
+                        </button>
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
+                          <Link
+                            href={`/blog/${b.slug}`}
+                            target="_blank"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                            title="Görüntüle"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(b)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-700 hover:bg-amber-50 transition"
+                            title="Düzenle"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(b.id, b.title)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                            title="Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -379,4 +488,3 @@ export default function AdminBlogsPage() {
     </div>
   );
 }
-

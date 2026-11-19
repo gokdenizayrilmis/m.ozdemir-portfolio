@@ -10,12 +10,35 @@ public record CampaignClickStatDto(string Campaign, int Count);
 
 public record PageClickStatDto(string PageSlug, int Count);
 
+public record DailyTrendPointDto(
+    string Date,
+    string Label,
+    int WhatsApp,
+    int Phone,
+    int Total
+);
+
+public record PreviousPeriodComparisonDto(
+    int PreviousTotalClicks,
+    int PreviousWhatsAppClicks,
+    int PreviousPhoneClicks,
+    double? TotalChangePercent,
+    double? WhatsAppChangePercent,
+    double? PhoneChangePercent
+);
+
 public record LeadsSummaryDto(
     int TotalClicks,
     int WhatsAppClicks,
     int PhoneClicks,
     List<CampaignClickStatDto> ByCampaign,
-    List<PageClickStatDto> ByPage
+    List<PageClickStatDto> ByPage,
+    List<DailyTrendPointDto> DailyTrend,
+    PreviousPeriodComparisonDto? PreviousPeriod,
+    int? PreviousTotalClicks,
+    double? TotalChangePercent,
+    double? WhatsAppChangePercent,
+    double? PhoneChangePercent
 );
 
 public record PagedLeadsResponse(
@@ -27,6 +50,12 @@ public record PagedLeadsResponse(
 
 public static class LeadRangeHelper
 {
+    private static readonly string[] TrMonths =
+    {
+        "Oca", "Şub", "Mar", "Nis", "May", "Haz",
+        "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"
+    };
+
     public static DateTime? ParseRangeToUtc(string? range)
     {
         var normalized = (range ?? "30d").Trim().ToLowerInvariant();
@@ -35,12 +64,137 @@ public static class LeadRangeHelper
         return normalized switch
         {
             "today" => new DateTime(trNow.Year, trNow.Month, trNow.Day, 0, 0, 0, DateTimeKind.Utc).AddHours(-3),
-            "7d" => DateTime.UtcNow.AddDays(-7),
-            "30d" => DateTime.UtcNow.AddDays(-30),
+            "7d" => new DateTime(trNow.Year, trNow.Month, trNow.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(-6).AddHours(-3),
+            "30d" => new DateTime(trNow.Year, trNow.Month, trNow.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(-29).AddHours(-3),
             "month" => new DateTime(trNow.Year, trNow.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddHours(-3),
             "all" => null,
-            _ => DateTime.UtcNow.AddDays(-30)
+            _ => new DateTime(trNow.Year, trNow.Month, trNow.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(-29).AddHours(-3)
         };
+    }
+
+    public static (DateTime PrevFromUtc, DateTime PrevToUtc)? GetPreviousPeriodWindowUtc(string? range)
+    {
+        var normalized = (range ?? "30d").Trim().ToLowerInvariant();
+        var currentFromUtc = ParseRangeToUtc(normalized);
+        if (!currentFromUtc.HasValue || normalized == "all")
+        {
+            return null;
+        }
+
+        return normalized switch
+        {
+            "today" => (currentFromUtc.Value.AddDays(-1), currentFromUtc.Value),
+            "7d" => (currentFromUtc.Value.AddDays(-7), currentFromUtc.Value),
+            "30d" => (currentFromUtc.Value.AddDays(-30), currentFromUtc.Value),
+            "month" => (currentFromUtc.Value.AddMonths(-1), currentFromUtc.Value),
+            _ => (currentFromUtc.Value.AddDays(-30), currentFromUtc.Value)
+        };
+    }
+
+    public static List<DailyTrendPointDto> BuildDailyTrend(string? range, List<Lead> leads)
+    {
+        var normalized = (range ?? "30d").Trim().ToLowerInvariant();
+        var trNow = DateTime.UtcNow.AddHours(3);
+
+        if (normalized == "today")
+        {
+            var points = new List<DailyTrendPointDto>(24);
+            var todayDate = trNow.Date;
+            var maxHour = Math.Max(trNow.Hour, 23);
+
+            for (var hour = 0; hour <= maxHour; hour++)
+            {
+                var hourLeads = leads.Where(x =>
+                {
+                    var trTime = x.CreatedAt.AddHours(3);
+                    return trTime.Date == todayDate && trTime.Hour == hour;
+                }).ToList();
+
+                var wa = hourLeads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
+                var ph = hourLeads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+
+                points.Add(new DailyTrendPointDto(
+                    $"{todayDate:yyyy-MM-dd} {hour:D2}:00",
+                    $"{hour:D2}:00",
+                    wa,
+                    ph,
+                    wa + ph));
+            }
+
+            return points;
+        }
+
+        DateTime startDateTr;
+        var endDateTr = trNow.Date;
+
+        switch (normalized)
+        {
+            case "7d":
+                startDateTr = endDateTr.AddDays(-6);
+                break;
+            case "30d":
+                startDateTr = endDateTr.AddDays(-29);
+                break;
+            case "month":
+                startDateTr = new DateTime(trNow.Year, trNow.Month, 1);
+                break;
+            case "all":
+                if (leads.Count > 0)
+                {
+                    var earliestTr = leads.Min(x => x.CreatedAt).AddHours(3).Date;
+                    var minFloor = endDateTr.AddDays(-89);
+                    startDateTr = earliestTr < minFloor ? minFloor : earliestTr;
+                    if ((endDateTr - startDateTr).TotalDays < 13)
+                    {
+                        startDateTr = endDateTr.AddDays(-13);
+                    }
+                }
+                else
+                {
+                    startDateTr = endDateTr.AddDays(-13);
+                }
+                break;
+            default:
+                startDateTr = endDateTr.AddDays(-29);
+                break;
+        }
+
+        var groupedByDay = leads
+            .GroupBy(x => x.CreatedAt.AddHours(3).Date)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var result = new List<DailyTrendPointDto>();
+        for (var day = startDateTr; day <= endDateTr; day = day.AddDays(1))
+        {
+            var wa = 0;
+            var ph = 0;
+
+            if (groupedByDay.TryGetValue(day, out var dayLeads))
+            {
+                wa = dayLeads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
+                ph = dayLeads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+            }
+
+            var label = $"{day.Day} {TrMonths[day.Month - 1]}";
+            result.Add(new DailyTrendPointDto(
+                day.ToString("yyyy-MM-dd"),
+                label,
+                wa,
+                ph,
+                wa + ph));
+        }
+
+        return result;
+    }
+
+    public static double CalculateChangePercent(int current, int previous)
+    {
+        if (previous <= 0)
+        {
+            return current > 0 ? 100.0 : 0.0;
+        }
+
+        return Math.Round(((double)(current - previous) / previous) * 100.0, 1);
     }
 }
 
@@ -105,11 +259,11 @@ public class GetLeadsSummaryQueryHandler : IRequestHandler<GetLeadsSummaryQuery,
     public async Task<Result<LeadsSummaryDto>> Handle(GetLeadsSummaryQuery request, CancellationToken cancellationToken)
     {
         var fromUtc = LeadRangeHelper.ParseRangeToUtc(request.Range);
-        var leads = await _repository.GetFilteredAsync(fromUtc, null, cancellationToken);
+        var leads = await _repository.GetFilteredAsync(fromUtc, null, null, cancellationToken);
 
-        var totalClicks = leads.Count;
         var whatsAppClicks = leads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
         var phoneClicks = leads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+        var totalClicks = whatsAppClicks + phoneClicks;
 
         var byCampaign = leads
             .GroupBy(x => string.IsNullOrWhiteSpace(x.UtmCampaign) ? "Organik / Doğrudan Ziyaret" : x.UtmCampaign!)
@@ -123,12 +277,43 @@ public class GetLeadsSummaryQueryHandler : IRequestHandler<GetLeadsSummaryQuery,
             .OrderByDescending(x => x.Count)
             .ToList();
 
+        var dailyTrend = LeadRangeHelper.BuildDailyTrend(request.Range, leads);
+
+        PreviousPeriodComparisonDto? previousPeriod = null;
+        var prevWindow = LeadRangeHelper.GetPreviousPeriodWindowUtc(request.Range);
+        if (prevWindow.HasValue)
+        {
+            var prevLeads = await _repository.GetFilteredAsync(
+                prevWindow.Value.PrevFromUtc,
+                prevWindow.Value.PrevToUtc,
+                null,
+                cancellationToken);
+
+            var prevWa = prevLeads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
+            var prevPh = prevLeads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+            var prevTotal = prevWa + prevPh;
+
+            previousPeriod = new PreviousPeriodComparisonDto(
+                prevTotal,
+                prevWa,
+                prevPh,
+                LeadRangeHelper.CalculateChangePercent(totalClicks, prevTotal),
+                LeadRangeHelper.CalculateChangePercent(whatsAppClicks, prevWa),
+                LeadRangeHelper.CalculateChangePercent(phoneClicks, prevPh));
+        }
+
         var summary = new LeadsSummaryDto(
             totalClicks,
             whatsAppClicks,
             phoneClicks,
             byCampaign,
-            byPage);
+            byPage,
+            dailyTrend,
+            previousPeriod,
+            previousPeriod?.PreviousTotalClicks,
+            previousPeriod?.TotalChangePercent,
+            previousPeriod?.WhatsAppChangePercent,
+            previousPeriod?.PhoneChangePercent);
 
         return Result<LeadsSummaryDto>.Success(summary);
     }
@@ -187,7 +372,7 @@ public class ExportLeadsCsvQueryHandler : IRequestHandler<ExportLeadsCsvQuery, R
     public async Task<Result<byte[]>> Handle(ExportLeadsCsvQuery request, CancellationToken cancellationToken)
     {
         var fromUtc = LeadRangeHelper.ParseRangeToUtc(request.Range);
-        var leads = await _repository.GetFilteredAsync(fromUtc, request.Type, cancellationToken);
+        var leads = await _repository.GetFilteredAsync(fromUtc, null, request.Type, cancellationToken);
 
         var sb = new StringBuilder();
         sb.AppendLine("Tarih (TR),Dönüşüm Tipi,Kaynak Sayfa,UTM Source,UTM Medium,UTM Campaign");

@@ -15,8 +15,10 @@ import {
   Loader2,
   X,
   Stethoscope,
+  Image as ImageIcon,
 } from 'lucide-react';
 import Link from 'next/link';
+import { resolveMediaUrl } from '@/utils/cn';
 
 export default function AdminTreatmentsPage() {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
@@ -24,6 +26,7 @@ export default function AdminTreatmentsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
 
   // Edit / Create modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -151,13 +154,20 @@ export default function AdminTreatmentsPage() {
     }
   };
 
+  const publishedCount = treatments.filter((t) => t.isPublished).length;
+  const draftCount = treatments.length - publishedCount;
+
   const filtered = treatments.filter((t) => {
     const matchesSearch =
       t.title.toLowerCase().includes(search.toLowerCase()) ||
       t.slug.toLowerCase().includes(search.toLowerCase());
     const matchesCategory =
       !categoryFilter || t.categorySlug === categoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'published' && t.isPublished) ||
+      (statusFilter === 'draft' && !t.isPublished);
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   return (
@@ -194,34 +204,74 @@ export default function AdminTreatmentsPage() {
         </div>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-          <input
-            type="text"
-            placeholder="Tedavi adı veya slug ile ara..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          />
+      {/* Filter, Status Pills and Search Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+            <input
+              type="text"
+              placeholder="Tedavi adı veya slug ile ara..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            />
+          </div>
+
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-medium text-slate-700"
+          >
+            <option value="">Tüm Kategoriler</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.slug}>
+                {c.title}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-medium"
-        >
-          <option value="">Tüm Kategoriler</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.slug}>
-              {c.title}
-            </option>
-          ))}
-        </select>
+
+        {/* Status Filter Pills */}
+        <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl text-xs tabular-nums self-start lg:self-auto">
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+              statusFilter === 'all'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Tümü ({treatments.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('published')}
+            className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+              statusFilter === 'published'
+                ? 'bg-white text-emerald-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Yayında ({publishedCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('draft')}
+            className={`px-3 py-1.5 rounded-lg font-semibold transition ${
+              statusFilter === 'draft'
+                ? 'bg-white text-slate-800 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Taslak ({draftCount})
+          </button>
+        </div>
       </div>
 
       {/* Treatments Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-slate-400 flex items-center justify-center gap-2 text-xs">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -230,7 +280,7 @@ export default function AdminTreatmentsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase font-semibold">
+              <thead className="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-200/70">
                 <tr>
                   <th className="py-3 px-4">Tedavi Başlığı</th>
                   <th className="py-3 px-4">URL Slug</th>
@@ -241,84 +291,112 @@ export default function AdminTreatmentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      {t.title}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-500">
-                      /{t.slug}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
-                        {t.categorySlug}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded-md text-[11px]">
-                        {t.faqs?.length || 0} Soru
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <button
-                        type="button"
-                        disabled={togglingId === t.id}
-                        onClick={() => handleTogglePublish(t)}
-                        title={
-                          t.isPublished
-                            ? 'Yayında (Gizlemek için tıklayın)'
-                            : 'Taslak (Yayınlamak için tıklayın)'
-                        }
-                        className="inline-flex items-center gap-2 focus:outline-none disabled:opacity-50"
-                      >
-                        <span
-                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                            t.isPublished ? 'bg-emerald-600' : 'bg-slate-300'
-                          }`}
+                {filtered.map((t) => {
+                  const thumbUrl = resolveMediaUrl(t.coverImageUrl);
+                  return (
+                    <tr
+                      key={t.id}
+                      className="hover:bg-slate-50/80 transition-colors"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          {thumbUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={thumbUrl}
+                              alt={t.title}
+                              className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-50"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
+                              <ImageIcon className="w-4 h-4" />
+                            </div>
+                          )}
+                          <span className="font-semibold text-slate-900">
+                            {t.title}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-500">
+                        /{t.slug}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
+                          {t.categorySlug}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-amber-800 font-semibold tabular-nums bg-amber-50 px-2 py-0.5 rounded-md text-[11px]">
+                          {t.faqs?.length || 0} Soru
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          type="button"
+                          disabled={togglingId === t.id}
+                          onClick={() => handleTogglePublish(t)}
+                          title={
+                            t.isPublished
+                              ? 'Yayında (Gizlemek için tıklayın)'
+                              : 'Taslak (Yayınlamak için tıklayın)'
+                          }
+                          className="inline-flex items-center gap-2 focus:outline-none disabled:opacity-50"
                         >
                           <span
-                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              t.isPublished ? 'translate-x-4' : 'translate-x-0'
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                              t.isPublished ? 'bg-emerald-600' : 'bg-slate-300'
                             }`}
-                          />
-                        </span>
-                        <span
-                          className={`text-[11px] font-semibold ${
-                            t.isPublished
-                              ? 'text-emerald-700'
-                              : 'text-slate-500'
-                          }`}
-                        >
-                          {t.isPublished ? 'Yayında' : 'Taslak'}
-                        </span>
-                      </button>
-                    </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      <Link
-                        href={`/${t.slug}`}
-                        target="_blank"
-                        className="p-1.5 text-slate-400 hover:text-slate-600 transition inline-block"
-                        title="Sayfayı Önizle"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleOpenEdit(t)}
-                        className="p-1.5 text-slate-400 hover:text-amber-700 transition"
-                        title="Düzenle"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(t.id, t.title)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 transition"
-                        title="Sil"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                t.isPublished
+                                  ? 'translate-x-4'
+                                  : 'translate-x-0'
+                              }`}
+                            />
+                          </span>
+                          <span
+                            className={`text-[11px] font-semibold ${
+                              t.isPublished
+                                ? 'text-emerald-700'
+                                : 'text-slate-500'
+                            }`}
+                          >
+                            {t.isPublished ? 'Yayında' : 'Taslak'}
+                          </span>
+                        </button>
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
+                          <Link
+                            href={`/${t.slug}`}
+                            target="_blank"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                            title="Sayfayı Önizle"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(t)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-700 hover:bg-amber-50 transition"
+                            title="Düzenle"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(t.id, t.title)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                            title="Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

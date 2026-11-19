@@ -1,11 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
-import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminSidebar, {
+  SETTINGS_SUB_ITEMS,
+} from '@/components/admin/AdminSidebar';
 import { authService } from '@/services';
-import { Loader2, Menu } from 'lucide-react';
+import {
+  ChevronRight,
+  ExternalLink,
+  Loader2,
+  Menu,
+} from 'lucide-react';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin', 'latin-ext'],
@@ -20,6 +28,93 @@ const interAdmin = Inter({
   variable: '--font-inter-admin',
   display: 'swap',
 });
+
+function AdminTopbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'contact';
+
+  const getBreadcrumbs = () => {
+    if (pathname === '/admin') {
+      return ['Panel', 'Dönüşüm Özeti'];
+    }
+    if (pathname.startsWith('/admin/treatments')) {
+      return ['Panel', 'Tedavi Sayfaları'];
+    }
+    if (pathname.startsWith('/admin/blogs')) {
+      return ['Panel', 'Blog & Makaleler'];
+    }
+    if (pathname.startsWith('/admin/settings')) {
+      const sub = SETTINGS_SUB_ITEMS.find((s) => s.tab === activeTab);
+      return ['Panel', 'Klinik Ayarları', sub?.title || 'İletişim & Konum'];
+    }
+    return ['Panel'];
+  };
+
+  const crumbs = getBreadcrumbs();
+
+  return (
+    <header className="sticky top-0 z-30 h-14 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-4">
+      {/* Left: Mobile Hamburger + Dynamic Breadcrumb */}
+      <div className="flex items-center gap-3 min-w-0">
+        <button
+          type="button"
+          onClick={onOpenMobileMenu}
+          aria-label="Yönetim Menüsünü Aç"
+          className="lg:hidden p-2 -ml-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-1.5 text-xs sm:text-[13px] min-w-0"
+        >
+          {crumbs.map((crumb, idx) => {
+            const isLast = idx === crumbs.length - 1;
+            return (
+              <span key={crumb} className="flex items-center gap-1.5 min-w-0">
+                {idx > 0 && (
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                )}
+                <span
+                  className={
+                    isLast
+                      ? 'font-semibold text-slate-900 truncate'
+                      : 'font-medium text-slate-500 truncate'
+                  }
+                >
+                  {crumb}
+                </span>
+              </span>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Right: Quick Live Site Link + Admin Profile Badge */}
+      <div className="flex items-center gap-3 shrink-0">
+        <Link
+          href="/"
+          target="_blank"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-medium shadow-2xs transition"
+        >
+          <span>Canlı Siteyi Aç</span>
+          <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+        </Link>
+
+        <div className="hidden sm:flex items-center gap-2.5 pl-3 border-l border-slate-200">
+          <div className="w-7 h-7 rounded-lg bg-slate-900 text-amber-400 flex items-center justify-center text-[11px] font-heading font-bold tracking-tight">
+            MÖ
+          </div>
+          <span className="text-xs font-semibold text-slate-800">
+            Prof. Dr. Mustafa Özdemir
+          </span>
+        </div>
+      </div>
+    </header>
+  );
+}
 
 export default function AdminLayout({
   children,
@@ -83,38 +178,24 @@ export default function AdminLayout({
 
   return (
     <div
-      className={`${fontWrapperClass} min-h-screen bg-slate-100 flex flex-col lg:flex-row`}
+      className={`${fontWrapperClass} min-h-screen bg-slate-50/70 flex flex-col lg:flex-row`}
     >
-      {/* Mobile Top Bar (< lg) */}
-      <header className="lg:hidden sticky top-0 z-30 bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Yönetim Menüsünü Aç"
-            className="p-2 -ml-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="min-w-0">
-            <span className="text-[10px] uppercase tracking-widest text-amber-500 font-semibold block leading-none">
-              Klinik CMS Panel
-            </span>
-            <span className="text-sm font-heading font-bold tracking-tight text-white truncate block mt-0.5">
-              Prof. Dr. Mustafa Özdemir
-            </span>
-          </div>
-        </div>
-      </header>
+      <Suspense fallback={null}>
+        <AdminSidebar
+          mobileOpen={mobileMenuOpen}
+          onCloseMobile={() => setMobileMenuOpen(false)}
+        />
+      </Suspense>
 
-      <AdminSidebar
-        mobileOpen={mobileMenuOpen}
-        onCloseMobile={() => setMobileMenuOpen(false)}
-      />
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+        <Suspense fallback={<div className="h-14 border-b border-slate-200/80 bg-white/80" />}>
+          <AdminTopbar onOpenMobileMenu={() => setMobileMenuOpen(true)} />
+        </Suspense>
 
-      <main className="flex-1 min-w-0 p-5 sm:p-8 lg:p-10">
-        <div className="max-w-7xl mx-auto w-full">{children}</div>
-      </main>
+        <main className="flex-1 max-w-[1440px] mx-auto w-full px-4 sm:px-6 py-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

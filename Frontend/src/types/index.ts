@@ -118,12 +118,35 @@ export interface PageClickStat {
   count: number;
 }
 
+export interface DailyTrendPoint {
+  date: string;
+  label: string;
+  whatsApp: number;
+  phone: number;
+  total: number;
+}
+
+export interface PreviousPeriodComparison {
+  previousTotalClicks: number;
+  previousWhatsAppClicks: number;
+  previousPhoneClicks: number;
+  totalChangePercent?: number | null;
+  whatsAppChangePercent?: number | null;
+  phoneChangePercent?: number | null;
+}
+
 export interface LeadsSummary {
   totalClicks: number;
   whatsAppClicks: number;
   phoneClicks: number;
   byCampaign: CampaignClickStat[];
   byPage: PageClickStat[];
+  dailyTrend: DailyTrendPoint[];
+  previousPeriod?: PreviousPeriodComparison | null;
+  previousTotalClicks?: number | null;
+  totalChangePercent?: number | null;
+  whatsAppChangePercent?: number | null;
+  phoneChangePercent?: number | null;
 }
 
 export interface PagedLeadsResponse {
