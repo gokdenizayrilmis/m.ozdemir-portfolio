@@ -1,6 +1,5 @@
-export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5145/api'
-).replace('localhost', '127.0.0.1');
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5145/api';
 
 export const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
