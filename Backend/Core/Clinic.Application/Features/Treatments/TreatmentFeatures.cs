@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Extensions;
 using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Common.Models;
 using Clinic.Domain.Entities;
@@ -144,13 +145,13 @@ public class CreateTreatmentCommandHandler : IRequestHandler<CreateTreatmentComm
 
     public async Task<Result<Treatment>> Handle(CreateTreatmentCommand request, CancellationToken cancellationToken)
     {
-        var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
+        var normalizedSlug = request.Slug.ToNormalizedSlug();
         if (await _repository.ExistsBySlugAsync(normalizedSlug, null, cancellationToken))
         {
             return Result<Treatment>.Failure($"'{normalizedSlug}' URL slug değeri zaten başka bir tedavide kullanılıyor.");
         }
 
-        var normalizedCategorySlug = request.CategorySlug.Trim().ToLowerInvariant();
+        var normalizedCategorySlug = request.CategorySlug.ToNormalizedSlug();
         var treatment = new Treatment
         {
             Title = request.Title.Trim(),
@@ -234,13 +235,13 @@ public class UpdateTreatmentCommandHandler : IRequestHandler<UpdateTreatmentComm
 
         var oldSlug = existing.Slug;
         var oldCategorySlug = existing.CategorySlug;
-        var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
+        var normalizedSlug = request.Slug.ToNormalizedSlug();
         if (await _repository.ExistsBySlugAsync(normalizedSlug, request.Id, cancellationToken))
         {
             return Result<Treatment>.Failure($"'{normalizedSlug}' URL slug değeri başka bir tedavide kullanılıyor.");
         }
 
-        var newCategorySlug = request.CategorySlug.Trim().ToLowerInvariant();
+        var newCategorySlug = request.CategorySlug.ToNormalizedSlug();
         existing.Title = request.Title.Trim();
         existing.Slug = normalizedSlug;
         existing.CategoryId = request.CategoryId;
@@ -303,11 +304,7 @@ public class DeleteTreatmentCommandHandler : IRequestHandler<DeleteTreatmentComm
             0,
             cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(existing.CoverImageUrl) &&
-            !existing.CoverImageUrl.Contains("/uploads/corporate/", StringComparison.OrdinalIgnoreCase))
-        {
-            await _imageStorageService.DeleteImageAsync(existing.CoverImageUrl, cancellationToken);
-        }
+        await _imageStorageService.DeleteNonCorporateImageIfAnyAsync(existing.CoverImageUrl, cancellationToken);
 
         await _revalidationService.RevalidatePathsAsync(
             new[] { "/", $"/{existing.Slug}", $"/kategori/{existing.CategorySlug}" },

@@ -1,4 +1,5 @@
 using Clinic.Domain.Common;
+using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
 using Clinic.Persistence.Settings;
 using Microsoft.Extensions.Options;
@@ -24,13 +25,13 @@ public class MongoDbContext
         _database = client.GetDatabase(settings.Value.DatabaseName);
     }
 
-    public IMongoCollection<Category> Categories => _database.GetCollection<Category>("categories");
-    public IMongoCollection<Treatment> Treatments => _database.GetCollection<Treatment>("treatments");
-    public IMongoCollection<BlogPost> BlogPosts => _database.GetCollection<BlogPost>("blog_posts");
-    public IMongoCollection<SiteSettings> SiteSettings => _database.GetCollection<SiteSettings>("site_settings");
-    public IMongoCollection<Lead> Leads => _database.GetCollection<Lead>("leads");
-    public IMongoCollection<AdminUser> AdminUsers => _database.GetCollection<AdminUser>("admin_users");
-    public IMongoCollection<RefreshToken> RefreshTokens => _database.GetCollection<RefreshToken>("refresh_tokens");
+    public IMongoCollection<Category> Categories => _database.GetCollection<Category>(MongoCollectionNames.Categories);
+    public IMongoCollection<Treatment> Treatments => _database.GetCollection<Treatment>(MongoCollectionNames.Treatments);
+    public IMongoCollection<BlogPost> BlogPosts => _database.GetCollection<BlogPost>(MongoCollectionNames.BlogPosts);
+    public IMongoCollection<SiteSettings> SiteSettings => _database.GetCollection<SiteSettings>(MongoCollectionNames.SiteSettings);
+    public IMongoCollection<Lead> Leads => _database.GetCollection<Lead>(MongoCollectionNames.Leads);
+    public IMongoCollection<AdminUser> AdminUsers => _database.GetCollection<AdminUser>(MongoCollectionNames.AdminUsers);
+    public IMongoCollection<RefreshToken> RefreshTokens => _database.GetCollection<RefreshToken>(MongoCollectionNames.RefreshTokens);
 
     private static void RegisterClassMaps()
     {
@@ -52,78 +53,91 @@ public class MongoDbContext
                 });
             }
 
-            if (!BsonClassMap.IsClassMapRegistered(typeof(Category)))
-                BsonClassMap.RegisterClassMap<Category>(cm => cm.AutoMap());
-
-            if (!BsonClassMap.IsClassMapRegistered(typeof(Treatment)))
-            {
-                BsonClassMap.RegisterClassMap<Treatment>(cm =>
-                {
-                    cm.AutoMap();
-                    cm.SetIgnoreExtraElements(true);
-                });
-            }
-
-            if (!BsonClassMap.IsClassMapRegistered(typeof(BlogPost)))
-                BsonClassMap.RegisterClassMap<BlogPost>(cm => cm.AutoMap());
-
-            if (!BsonClassMap.IsClassMapRegistered(typeof(SiteSettings)))
-            {
-                BsonClassMap.RegisterClassMap<SiteSettings>(cm =>
-                {
-                    cm.AutoMap();
-                    cm.SetIgnoreExtraElements(true);
-                });
-            }
-
-            if (!BsonClassMap.IsClassMapRegistered(typeof(Lead)))
-                BsonClassMap.RegisterClassMap<Lead>(cm => cm.AutoMap());
-
-            if (!BsonClassMap.IsClassMapRegistered(typeof(AdminUser)))
-                BsonClassMap.RegisterClassMap<AdminUser>(cm => cm.AutoMap());
-
-            if (!BsonClassMap.IsClassMapRegistered(typeof(RefreshToken)))
-                BsonClassMap.RegisterClassMap<RefreshToken>(cm => cm.AutoMap());
+            RegisterEntityMap<Category>();
+            RegisterEntityMap<Treatment>();
+            RegisterEntityMap<BlogPost>();
+            RegisterEntityMap<SiteSettings>();
+            RegisterEntityMap<Lead>();
+            RegisterEntityMap<AdminUser>();
+            RegisterEntityMap<RefreshToken>();
 
             _mappingsRegistered = true;
         }
     }
 
+    private static void RegisterEntityMap<T>()
+    {
+        if (!BsonClassMap.IsClassMapRegistered(typeof(T)))
+        {
+            BsonClassMap.RegisterClassMap<T>(cm =>
+            {
+                cm.AutoMap();
+                cm.SetIgnoreExtraElements(true);
+            });
+        }
+    }
+
     public async Task EnsureIndexesAsync(CancellationToken cancellationToken = default)
     {
+        // Categories
         var categorySlugIndex = new CreateIndexModel<Category>(
             Builders<Category>.IndexKeys.Ascending(x => x.Slug),
             new CreateIndexOptions { Unique = true, Name = "idx_categories_slug_unique" });
         await Categories.Indexes.CreateOneAsync(categorySlugIndex, cancellationToken: cancellationToken);
 
-        var treatmentSlugIndex = new CreateIndexModel<Treatment>(
-            Builders<Treatment>.IndexKeys.Ascending(x => x.Slug),
-            new CreateIndexOptions { Unique = true, Name = "idx_treatments_slug_unique" });
-        await Treatments.Indexes.CreateOneAsync(treatmentSlugIndex, cancellationToken: cancellationToken);
+        // Treatments
+        await Treatments.Indexes.CreateManyAsync(new[]
+        {
+            new CreateIndexModel<Treatment>(
+                Builders<Treatment>.IndexKeys.Ascending(x => x.Slug),
+                new CreateIndexOptions { Unique = true, Name = "idx_treatments_slug_unique" }),
+            new CreateIndexModel<Treatment>(
+                Builders<Treatment>.IndexKeys
+                    .Ascending(x => x.CategorySlug)
+                    .Ascending(x => x.IsPublished)
+                    .Ascending(x => x.DisplayOrder),
+                new CreateIndexOptions { Name = "idx_treatments_category_published_order" })
+        }, cancellationToken: cancellationToken);
 
-        var treatmentCategoryIndex = new CreateIndexModel<Treatment>(
-            Builders<Treatment>.IndexKeys.Ascending(x => x.CategorySlug).Ascending(x => x.DisplayOrder),
-            new CreateIndexOptions { Name = "idx_treatments_category_order" });
-        await Treatments.Indexes.CreateOneAsync(treatmentCategoryIndex, cancellationToken: cancellationToken);
+        // BlogPosts
+        await BlogPosts.Indexes.CreateManyAsync(new[]
+        {
+            new CreateIndexModel<BlogPost>(
+                Builders<BlogPost>.IndexKeys.Ascending(x => x.Slug),
+                new CreateIndexOptions { Unique = true, Name = "idx_blogs_slug_unique" }),
+            new CreateIndexModel<BlogPost>(
+                Builders<BlogPost>.IndexKeys
+                    .Ascending(x => x.IsPublished)
+                    .Descending(x => x.PublishedAt),
+                new CreateIndexOptions { Name = "idx_blogs_published_publishedAt" })
+        }, cancellationToken: cancellationToken);
 
-        var blogSlugIndex = new CreateIndexModel<BlogPost>(
-            Builders<BlogPost>.IndexKeys.Ascending(x => x.Slug),
-            new CreateIndexOptions { Unique = true, Name = "idx_blogs_slug_unique" });
-        await BlogPosts.Indexes.CreateOneAsync(blogSlugIndex, cancellationToken: cancellationToken);
+        // Leads (summary & paged queries)
+        var leadsCreatedTypeIndex = new CreateIndexModel<Lead>(
+            Builders<Lead>.IndexKeys
+                .Descending(x => x.CreatedAt)
+                .Ascending(x => x.ConversionType),
+            new CreateIndexOptions { Name = "idx_leads_createdAt_desc_type" });
+        await Leads.Indexes.CreateOneAsync(leadsCreatedTypeIndex, cancellationToken: cancellationToken);
 
+        // AdminUsers
         var adminEmailIndex = new CreateIndexModel<AdminUser>(
             Builders<AdminUser>.IndexKeys.Ascending(x => x.Email),
             new CreateIndexOptions { Unique = true, Name = "idx_admin_users_email_unique" });
         await AdminUsers.Indexes.CreateOneAsync(adminEmailIndex, cancellationToken: cancellationToken);
 
-        var refreshTokenHashIndex = new CreateIndexModel<RefreshToken>(
-            Builders<RefreshToken>.IndexKeys.Ascending(x => x.TokenHash),
-            new CreateIndexOptions { Unique = true, Name = "idx_refresh_tokens_hash_unique" });
-        await RefreshTokens.Indexes.CreateOneAsync(refreshTokenHashIndex, cancellationToken: cancellationToken);
-
-        var refreshTokenUserIndex = new CreateIndexModel<RefreshToken>(
-            Builders<RefreshToken>.IndexKeys.Ascending(x => x.AdminUserId),
-            new CreateIndexOptions { Name = "idx_refresh_tokens_user" });
-        await RefreshTokens.Indexes.CreateOneAsync(refreshTokenUserIndex, cancellationToken: cancellationToken);
+        // RefreshTokens (unique hash, user lookup, and TTL auto-purge on ExpiresAt)
+        await RefreshTokens.Indexes.CreateManyAsync(new[]
+        {
+            new CreateIndexModel<RefreshToken>(
+                Builders<RefreshToken>.IndexKeys.Ascending(x => x.TokenHash),
+                new CreateIndexOptions { Unique = true, Name = "idx_refresh_tokens_hash_unique" }),
+            new CreateIndexModel<RefreshToken>(
+                Builders<RefreshToken>.IndexKeys.Ascending(x => x.AdminUserId),
+                new CreateIndexOptions { Name = "idx_refresh_tokens_user" }),
+            new CreateIndexModel<RefreshToken>(
+                Builders<RefreshToken>.IndexKeys.Ascending(x => x.ExpiresAt),
+                new CreateIndexOptions { ExpireAfter = TimeSpan.Zero, Name = "idx_refresh_tokens_expires_ttl" })
+        }, cancellationToken: cancellationToken);
     }
 }

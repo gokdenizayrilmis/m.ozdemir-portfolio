@@ -7,6 +7,11 @@ namespace Clinic.WebAPI.Middlewares;
 
 public class GlobalExceptionMiddleware
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private readonly RequestDelegate _next;
     private readonly ILogger<GlobalExceptionMiddleware> _logger;
 
@@ -22,6 +27,14 @@ public class GlobalExceptionMiddleware
         {
             await _next(context);
         }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogDebug("İstek istemci tarafından iptal edildi: {Path}", context.Request.Path);
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode = 499;
+            }
+        }
         catch (ValidationException validationEx)
         {
             var errors = validationEx.Errors
@@ -29,33 +42,40 @@ public class GlobalExceptionMiddleware
                 .Distinct()
                 .ToList();
 
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-
-            var response = Result.Failure("Doğrulama hatası oluştu.", errors);
-            await WriteJsonResponseAsync(context, response);
+            await WriteErrorResponseAsync(
+                context,
+                HttpStatusCode.BadRequest,
+                Result.Failure("Doğrulama hatası oluştu.", errors));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Yetkisiz erişim girişimi: {Path}", context.Request.Path);
+            await WriteErrorResponseAsync(
+                context,
+                HttpStatusCode.Forbidden,
+                Result.Failure(ex.Message));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "İşlenmeyen bir sunucu hatası oluştu: {Path}", context.Request.Path);
-
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-            var response = Result.Failure("Sunucu tarafında beklenmeyen bir hata oluştu.");
-            await WriteJsonResponseAsync(context, response);
+            await WriteErrorResponseAsync(
+                context,
+                HttpStatusCode.InternalServerError,
+                Result.Failure("Sunucu tarafında beklenmeyen bir hata oluştu."));
         }
     }
 
-    private static async Task WriteJsonResponseAsync(HttpContext context, Result result)
+    private static async Task WriteErrorResponseAsync(HttpContext context, HttpStatusCode statusCode, Result result)
     {
-        var jsonOptions = new JsonSerializerOptions
+        if (context.Response.HasStarted)
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
+            return;
+        }
 
-        var json = JsonSerializer.Serialize(result, jsonOptions);
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)statusCode;
+
+        var json = JsonSerializer.Serialize(result, JsonOptions);
         await context.Response.WriteAsync(json);
     }
 }
-

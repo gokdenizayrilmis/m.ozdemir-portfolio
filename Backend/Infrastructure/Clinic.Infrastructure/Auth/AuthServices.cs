@@ -18,6 +18,8 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _jwtSettings = jwtOptions.Value;
     }
 
+    public int RefreshTokenExpiryDays => _jwtSettings.RefreshTokenExpiryDays;
+
     public string GenerateToken(string userId, string email, string fullName, string role)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));

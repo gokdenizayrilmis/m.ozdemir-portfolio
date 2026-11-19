@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Extensions;
 using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Common.Models;
 using Clinic.Domain.Entities;
@@ -5,6 +6,47 @@ using FluentValidation;
 using MediatR;
 
 namespace Clinic.Application.Features.Auth;
+
+internal static class AuthSessionHelper
+{
+    public static async Task<AuthSessionResult> CreateSessionAsync(
+        AdminUser adminUser,
+        IJwtTokenGenerator jwtTokenGenerator,
+        IRefreshTokenRepository refreshTokenRepository,
+        CancellationToken cancellationToken)
+    {
+        var accessToken = jwtTokenGenerator.GenerateToken(
+            adminUser.Id,
+            adminUser.Email,
+            adminUser.FullName,
+            adminUser.Role);
+
+        var rawRefreshToken = jwtTokenGenerator.GenerateRefreshToken();
+        var refreshTokenHash = jwtTokenGenerator.HashToken(rawRefreshToken);
+        var refreshExpiryDays = jwtTokenGenerator.RefreshTokenExpiryDays > 0 ? jwtTokenGenerator.RefreshTokenExpiryDays : 7;
+        var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(refreshExpiryDays);
+
+        var refreshTokenEntity = new RefreshToken
+        {
+            AdminUserId = adminUser.Id,
+            TokenHash = refreshTokenHash,
+            ExpiresAt = refreshTokenExpiresAt,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await refreshTokenRepository.CreateAsync(refreshTokenEntity, cancellationToken);
+
+        var authResponse = new AdminAuthResponse(
+            accessToken,
+            accessToken,
+            adminUser.Email,
+            adminUser.FullName,
+            adminUser.Role);
+
+        return new AuthSessionResult(authResponse, rawRefreshToken, refreshTokenExpiresAt);
+    }
+}
 
 public record AdminAuthResponse(
     string Token,
@@ -53,7 +95,7 @@ public class LoginAdminCommandHandler : IRequestHandler<LoginAdminCommand, Resul
 
     public async Task<Result<AuthSessionResult>> Handle(LoginAdminCommand request, CancellationToken cancellationToken)
     {
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var normalizedEmail = request.Email.ToNormalizedEmail();
         var adminUser = await _adminUserRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
 
         if (adminUser is null || !_passwordHasher.VerifyPassword(request.Password, adminUser.PasswordHash))
@@ -61,37 +103,13 @@ public class LoginAdminCommandHandler : IRequestHandler<LoginAdminCommand, Resul
             return Result<AuthSessionResult>.Failure("E-posta adresi veya şifre hatalı.");
         }
 
-        var accessToken = _jwtTokenGenerator.GenerateToken(
-            adminUser.Id,
-            adminUser.Email,
-            adminUser.FullName,
-            adminUser.Role);
+        var session = await AuthSessionHelper.CreateSessionAsync(
+            adminUser,
+            _jwtTokenGenerator,
+            _refreshTokenRepository,
+            cancellationToken);
 
-        var rawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
-        var refreshTokenHash = _jwtTokenGenerator.HashToken(rawRefreshToken);
-        var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
-
-        var refreshTokenEntity = new RefreshToken
-        {
-            AdminUserId = adminUser.Id,
-            TokenHash = refreshTokenHash,
-            ExpiresAt = refreshTokenExpiresAt,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _refreshTokenRepository.CreateAsync(refreshTokenEntity, cancellationToken);
-
-        var authResponse = new AdminAuthResponse(
-            accessToken,
-            accessToken,
-            adminUser.Email,
-            adminUser.FullName,
-            adminUser.Role);
-
-        return Result<AuthSessionResult>.Success(
-            new AuthSessionResult(authResponse, rawRefreshToken, refreshTokenExpiresAt),
-            "Giriş başarılı.");
+        return Result<AuthSessionResult>.Success(session, "Giriş başarılı.");
     }
 }
 
@@ -148,41 +166,18 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         }
 
         // Rotate refresh token
-        var newRawRefreshToken = _jwtTokenGenerator.GenerateRefreshToken();
-        var newTokenHash = _jwtTokenGenerator.HashToken(newRawRefreshToken);
-        var newExpiresAt = DateTime.UtcNow.AddDays(7);
+        var session = await AuthSessionHelper.CreateSessionAsync(
+            adminUser,
+            _jwtTokenGenerator,
+            _refreshTokenRepository,
+            cancellationToken);
 
         existingToken.RevokedAt = DateTime.UtcNow;
-        existingToken.ReplacedByTokenHash = newTokenHash;
+        existingToken.ReplacedByTokenHash = _jwtTokenGenerator.HashToken(session.RawRefreshToken);
         existingToken.UpdatedAt = DateTime.UtcNow;
         await _refreshTokenRepository.UpdateAsync(existingToken, cancellationToken);
 
-        var rotatedToken = new RefreshToken
-        {
-            AdminUserId = adminUser.Id,
-            TokenHash = newTokenHash,
-            ExpiresAt = newExpiresAt,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-        await _refreshTokenRepository.CreateAsync(rotatedToken, cancellationToken);
-
-        var newAccessToken = _jwtTokenGenerator.GenerateToken(
-            adminUser.Id,
-            adminUser.Email,
-            adminUser.FullName,
-            adminUser.Role);
-
-        var authResponse = new AdminAuthResponse(
-            newAccessToken,
-            newAccessToken,
-            adminUser.Email,
-            adminUser.FullName,
-            adminUser.Role);
-
-        return Result<AuthSessionResult>.Success(
-            new AuthSessionResult(authResponse, newRawRefreshToken, newExpiresAt),
-            "Oturum başarıyla yenilendi.");
+        return Result<AuthSessionResult>.Success(session, "Oturum başarıyla yenilendi.");
     }
 }
 

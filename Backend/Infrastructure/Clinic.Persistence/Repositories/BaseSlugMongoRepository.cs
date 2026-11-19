@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Extensions;
 using Clinic.Domain.Common;
 using MongoDB.Driver;
 
@@ -15,7 +16,7 @@ public abstract class BaseSlugMongoRepository<T> where T : BaseEntity, ISlugEnti
         Collection = collection;
     }
 
-    protected static string NormalizeSlug(string slug) => slug.Trim().ToLowerInvariant();
+    protected static string NormalizeSlug(string slug) => slug.ToNormalizedSlug();
 
     public async Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {

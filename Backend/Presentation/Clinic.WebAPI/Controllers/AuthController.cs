@@ -2,9 +2,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Clinic.Application.Common.Models;
 using Clinic.Application.Features.Auth;
+using Clinic.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Clinic.WebAPI.Controllers;
 
@@ -12,8 +14,6 @@ namespace Clinic.WebAPI.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private const string RefreshTokenCookieName = "refresh_token";
-
     private readonly IMediator _mediator;
     private readonly IWebHostEnvironment _environment;
 
@@ -24,6 +24,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
     public async Task<IActionResult> Login([FromBody] LoginAdminCommand command, CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(command, cancellationToken);
@@ -37,9 +38,10 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    [EnableRateLimiting(RateLimitPolicies.AuthRefresh)]
     public async Task<IActionResult> Refresh(CancellationToken cancellationToken = default)
     {
-        var rawRefreshToken = Request.Cookies[RefreshTokenCookieName];
+        var rawRefreshToken = Request.Cookies[AuthConstants.RefreshTokenCookieName];
         var result = await _mediator.Send(new RefreshTokenCommand(rawRefreshToken), cancellationToken);
 
         if (!result.IsSuccess || result.Data is null)
@@ -55,7 +57,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken = default)
     {
-        var rawRefreshToken = Request.Cookies[RefreshTokenCookieName];
+        var rawRefreshToken = Request.Cookies[AuthConstants.RefreshTokenCookieName];
         var result = await _mediator.Send(new LogoutAdminCommand(rawRefreshToken), cancellationToken);
         ClearRefreshTokenCookie();
         return Ok(result);
@@ -87,7 +89,7 @@ public class AuthController : ControllerBase
     private void SetRefreshTokenCookie(string rawToken, DateTime expiresAtUtc)
     {
         Response.Cookies.Append(
-            RefreshTokenCookieName,
+            AuthConstants.RefreshTokenCookieName,
             rawToken,
             BuildRefreshCookieOptions(expiresAtUtc));
     }
@@ -95,7 +97,7 @@ public class AuthController : ControllerBase
     private void ClearRefreshTokenCookie()
     {
         Response.Cookies.Delete(
-            RefreshTokenCookieName,
+            AuthConstants.RefreshTokenCookieName,
             BuildRefreshCookieOptions());
     }
 
@@ -107,7 +109,7 @@ public class AuthController : ControllerBase
             HttpOnly = true,
             Secure = !isDevelopment,
             SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None,
-            Path = "/api/auth"
+            Path = AuthConstants.RefreshTokenCookiePath
         };
 
         if (expiresAtUtc.HasValue)

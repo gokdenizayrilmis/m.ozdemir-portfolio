@@ -1,6 +1,8 @@
 using System.Text;
+using Clinic.Application.Common.Extensions;
 using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Common.Models;
+using Clinic.Domain.Constants;
 using Clinic.Domain.Entities;
 using MediatR;
 
@@ -70,7 +72,7 @@ public static class LeadRangeHelper
     public static DateTime? ParseRangeToUtc(string? range)
     {
         var normalized = (range ?? "30d").Trim().ToLowerInvariant();
-        var trNow = DateTime.UtcNow.AddHours(3);
+        var trNow = NormalizationExtensions.TurkeyNowUtcOffset();
 
         return normalized switch
         {
@@ -102,10 +104,13 @@ public static class LeadRangeHelper
         };
     }
 
-    public static List<DailyTrendPointDto> BuildDailyTrend(string? range, List<Lead> leads)
+    public static List<DailyTrendPointDto> BuildDailyTrend(
+        string? range,
+        List<LeadDailyTypeCount> dailyByType,
+        List<LeadHourlyTypeCount> hourlyByType)
     {
         var normalized = (range ?? "30d").Trim().ToLowerInvariant();
-        var trNow = DateTime.UtcNow.AddHours(3);
+        var trNow = NormalizationExtensions.TurkeyNowUtcOffset();
 
         if (normalized == "today")
         {
@@ -113,16 +118,19 @@ public static class LeadRangeHelper
             var todayDate = trNow.Date;
             var maxHour = Math.Max(trNow.Hour, 23);
 
+            var hourMap = hourlyByType
+                .GroupBy(x => x.Hour)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             for (var hour = 0; hour <= maxHour; hour++)
             {
-                var hourLeads = leads.Where(x =>
+                var wa = 0;
+                var ph = 0;
+                if (hourMap.TryGetValue(hour, out var bucket))
                 {
-                    var trTime = x.CreatedAt.AddHours(3);
-                    return trTime.Date == todayDate && trTime.Hour == hour;
-                }).ToList();
-
-                var wa = hourLeads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
-                var ph = hourLeads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+                    wa = bucket.Where(x => IsWhatsApp(x.ConversionType)).Sum(x => x.Count);
+                    ph = bucket.Where(x => IsPhone(x.ConversionType)).Sum(x => x.Count);
+                }
 
                 points.Add(new DailyTrendPointDto(
                     $"{todayDate:yyyy-MM-dd} {hour:D2}:00",
@@ -135,8 +143,8 @@ public static class LeadRangeHelper
             return points;
         }
 
-        DateTime startDateTr;
         var endDateTr = trNow.Date;
+        DateTime startDateTr;
 
         switch (normalized)
         {
@@ -150,9 +158,10 @@ public static class LeadRangeHelper
                 startDateTr = new DateTime(trNow.Year, trNow.Month, 1);
                 break;
             case "all":
-                if (leads.Count > 0)
+                if (dailyByType.Count > 0)
                 {
-                    var earliestTr = leads.Min(x => x.CreatedAt).AddHours(3).Date;
+                    var earliestStr = dailyByType.Min(x => x.Date);
+                    var earliestTr = DateTime.TryParse(earliestStr, out var parsed) ? parsed.Date : endDateTr.AddDays(-13);
                     var minFloor = endDateTr.AddDays(-89);
                     startDateTr = earliestTr < minFloor ? minFloor : earliestTr;
                     if ((endDateTr - startDateTr).TotalDays < 13)
@@ -170,25 +179,26 @@ public static class LeadRangeHelper
                 break;
         }
 
-        var groupedByDay = leads
-            .GroupBy(x => x.CreatedAt.AddHours(3).Date)
+        var groupedByDay = dailyByType
+            .GroupBy(x => x.Date)
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var result = new List<DailyTrendPointDto>();
         for (var day = startDateTr; day <= endDateTr; day = day.AddDays(1))
         {
+            var dayKey = day.ToString("yyyy-MM-dd");
             var wa = 0;
             var ph = 0;
 
-            if (groupedByDay.TryGetValue(day, out var dayLeads))
+            if (groupedByDay.TryGetValue(dayKey, out var dayBuckets))
             {
-                wa = dayLeads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
-                ph = dayLeads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+                wa = dayBuckets.Where(x => IsWhatsApp(x.ConversionType)).Sum(x => x.Count);
+                ph = dayBuckets.Where(x => IsPhone(x.ConversionType)).Sum(x => x.Count);
             }
 
             var label = $"{day.Day} {TrMonths[day.Month - 1]}";
             result.Add(new DailyTrendPointDto(
-                day.ToString("yyyy-MM-dd"),
+                dayKey,
                 label,
                 wa,
                 ph,
@@ -198,10 +208,10 @@ public static class LeadRangeHelper
         return result;
     }
 
-    public static List<HourlyClickStatDto> BuildHourlyDistribution(List<Lead> leads)
+    public static List<HourlyClickStatDto> BuildHourlyDistribution(List<LeadHourlyTypeCount> hourlyByType)
     {
-        var groupedByHour = leads
-            .GroupBy(x => x.CreatedAt.AddHours(3).Hour)
+        var groupedByHour = hourlyByType
+            .GroupBy(x => x.Hour)
             .ToDictionary(g => g.Key, g => g.ToList());
 
         var points = new List<HourlyClickStatDto>(24);
@@ -209,10 +219,10 @@ public static class LeadRangeHelper
         {
             var wa = 0;
             var ph = 0;
-            if (groupedByHour.TryGetValue(hour, out var hourLeads))
+            if (groupedByHour.TryGetValue(hour, out var hourBuckets))
             {
-                wa = hourLeads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
-                ph = hourLeads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+                wa = hourBuckets.Where(x => IsWhatsApp(x.ConversionType)).Sum(x => x.Count);
+                ph = hourBuckets.Where(x => IsPhone(x.ConversionType)).Sum(x => x.Count);
             }
 
             points.Add(new HourlyClickStatDto(
@@ -235,6 +245,12 @@ public static class LeadRangeHelper
 
         return Math.Round(((double)(current - previous) / previous) * 100.0, 1);
     }
+
+    private static bool IsWhatsApp(string conversionType) =>
+        string.Equals(conversionType, LeadConversionTypes.WhatsAppClick, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsPhone(string conversionType) =>
+        string.Equals(conversionType, LeadConversionTypes.PhoneClick, StringComparison.OrdinalIgnoreCase);
 }
 
 // 1. TrackClickCommand (Google Ads & Conversion Micro-Tracking)
@@ -258,7 +274,7 @@ public class TrackClickCommandHandler : IRequestHandler<TrackClickCommand, Resul
     public async Task<Result<Lead>> Handle(TrackClickCommand request, CancellationToken cancellationToken)
     {
         var conversionType = string.IsNullOrWhiteSpace(request.ConversionType)
-            ? "WhatsAppClick"
+            ? LeadConversionTypes.WhatsAppClick
             : request.ConversionType.Trim();
         var sourcePageSlug = string.IsNullOrWhiteSpace(request.SourcePageSlug)
             ? "/"
@@ -298,26 +314,36 @@ public class GetLeadsSummaryQueryHandler : IRequestHandler<GetLeadsSummaryQuery,
     public async Task<Result<LeadsSummaryDto>> Handle(GetLeadsSummaryQuery request, CancellationToken cancellationToken)
     {
         var fromUtc = LeadRangeHelper.ParseRangeToUtc(request.Range);
-        var leads = await _repository.GetFilteredAsync(fromUtc, null, null, cancellationToken);
+        var currentAgg = await _repository.GetSummaryAggregationAsync(
+            fromUtc,
+            null,
+            includeBreakdowns: true,
+            cancellationToken);
 
-        var whatsAppClicks = leads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
-        var phoneClicks = leads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+        var whatsAppClicks = currentAgg.WhatsAppClicks;
+        var phoneClicks = currentAgg.PhoneClicks;
         var totalClicks = whatsAppClicks + phoneClicks;
 
-        var byCampaign = leads
-            .GroupBy(x => string.IsNullOrWhiteSpace(x.UtmCampaign) ? "Organik / Doğrudan Ziyaret" : x.UtmCampaign!)
-            .Select(g => new CampaignClickStatDto(g.Key, g.Count()))
+        var byCampaign = currentAgg.ByCampaign
+            .Select(x => new CampaignClickStatDto(
+                string.IsNullOrWhiteSpace(x.Name) ? "Organik / Doğrudan Ziyaret" : x.Name,
+                x.Count))
+            .GroupBy(x => x.Campaign)
+            .Select(g => new CampaignClickStatDto(g.Key, g.Sum(i => i.Count)))
             .OrderByDescending(x => x.Count)
             .ToList();
 
-        var byPage = leads
-            .GroupBy(x => string.IsNullOrWhiteSpace(x.SourcePageSlug) ? "/" : x.SourcePageSlug)
-            .Select(g => new PageClickStatDto(g.Key, g.Count()))
+        var byPage = currentAgg.ByPage
+            .Select(x => new PageClickStatDto(
+                string.IsNullOrWhiteSpace(x.Name) ? "/" : x.Name,
+                x.Count))
+            .GroupBy(x => x.PageSlug)
+            .Select(g => new PageClickStatDto(g.Key, g.Sum(i => i.Count)))
             .OrderByDescending(x => x.Count)
             .ToList();
 
-        var dailyTrend = LeadRangeHelper.BuildDailyTrend(request.Range, leads);
-        var hourlyDistribution = LeadRangeHelper.BuildHourlyDistribution(leads);
+        var dailyTrend = LeadRangeHelper.BuildDailyTrend(request.Range, currentAgg.DailyByType, currentAgg.HourlyByType);
+        var hourlyDistribution = LeadRangeHelper.BuildHourlyDistribution(currentAgg.HourlyByType);
         var businessHoursClicks = hourlyDistribution
             .Where(x => x.Hour >= 9 && x.Hour < 19)
             .Sum(x => x.Total);
@@ -327,14 +353,14 @@ public class GetLeadsSummaryQueryHandler : IRequestHandler<GetLeadsSummaryQuery,
         var prevWindow = LeadRangeHelper.GetPreviousPeriodWindowUtc(request.Range);
         if (prevWindow.HasValue)
         {
-            var prevLeads = await _repository.GetFilteredAsync(
+            var prevAgg = await _repository.GetSummaryAggregationAsync(
                 prevWindow.Value.PrevFromUtc,
                 prevWindow.Value.PrevToUtc,
-                null,
+                includeBreakdowns: false,
                 cancellationToken);
 
-            var prevWa = prevLeads.Count(x => string.Equals(x.ConversionType, "WhatsAppClick", StringComparison.OrdinalIgnoreCase));
-            var prevPh = prevLeads.Count(x => string.Equals(x.ConversionType, "PhoneClick", StringComparison.OrdinalIgnoreCase));
+            var prevWa = prevAgg.WhatsAppClicks;
+            var prevPh = prevAgg.PhoneClicks;
             var prevTotal = prevWa + prevPh;
 
             previousPeriod = new PreviousPeriodComparisonDto(
@@ -428,10 +454,10 @@ public class ExportLeadsCsvQueryHandler : IRequestHandler<ExportLeadsCsvQuery, R
 
         foreach (var lead in leads)
         {
-            var trTime = lead.CreatedAt.AddHours(3).ToString("yyyy-MM-dd HH:mm:ss");
-            var typeLabel = lead.ConversionType == "WhatsAppClick"
+            var trTime = lead.CreatedAt.ToTurkeyTime().ToString("yyyy-MM-dd HH:mm:ss");
+            var typeLabel = lead.ConversionType == LeadConversionTypes.WhatsAppClick
                 ? "WhatsApp Tıklaması"
-                : lead.ConversionType == "PhoneClick"
+                : lead.ConversionType == LeadConversionTypes.PhoneClick
                     ? "Telefon Araması"
                     : lead.ConversionType;
 

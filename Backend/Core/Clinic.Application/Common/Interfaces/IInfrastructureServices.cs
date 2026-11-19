@@ -6,8 +6,26 @@ public interface IImageStorageService
     Task<bool> DeleteImageAsync(string imageUrl, CancellationToken cancellationToken = default);
 }
 
+public static class ImageStorageExtensions
+{
+    public static Task<bool> DeleteNonCorporateImageIfAnyAsync(
+        this IImageStorageService imageStorageService,
+        string? imageUrl,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl) ||
+            imageUrl.Contains("/uploads/corporate/", StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult(false);
+        }
+
+        return imageStorageService.DeleteImageAsync(imageUrl, cancellationToken);
+    }
+}
+
 public interface IJwtTokenGenerator
 {
+    int RefreshTokenExpiryDays { get; }
     string GenerateToken(string userId, string email, string fullName, string role);
     string GenerateRefreshToken();
     string HashToken(string rawToken);

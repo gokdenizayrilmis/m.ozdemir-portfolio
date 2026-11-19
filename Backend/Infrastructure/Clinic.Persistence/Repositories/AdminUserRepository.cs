@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Extensions;
 using Clinic.Application.Common.Interfaces;
 using Clinic.Domain.Entities;
 using Clinic.Persistence.Context;
@@ -23,7 +24,7 @@ public class AdminUserRepository : IAdminUserRepository
 
     public async Task<AdminUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        var normalized = email.Trim().ToLowerInvariant();
+        var normalized = email.ToNormalizedEmail();
         return await _context.AdminUsers
             .Find(x => x.Email == normalized && !x.IsDeleted)
             .FirstOrDefaultAsync(cancellationToken);

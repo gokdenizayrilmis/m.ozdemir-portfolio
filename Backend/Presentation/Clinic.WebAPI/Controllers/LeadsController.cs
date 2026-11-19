@@ -1,7 +1,10 @@
+using Clinic.Application.Common.Extensions;
 using Clinic.Application.Features.Leads;
+using Clinic.Domain.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Clinic.WebAPI.Controllers;
 
@@ -12,6 +15,7 @@ public class LeadsController : BaseApiController
     }
 
     [HttpPost("track-click")]
+    [EnableRateLimiting(RateLimitPolicies.LeadsTrack)]
     public async Task<IActionResult> TrackClick(
         [FromBody] TrackClickCommand command,
         CancellationToken cancellationToken = default)
@@ -57,7 +61,7 @@ public class LeadsController : BaseApiController
             return BadRequest(result);
         }
 
-        var fileName = $"donusum-kayitlari-{DateTime.UtcNow.AddHours(3):yyyyMMdd-HHmm}.csv";
+        var fileName = $"donusum-kayitlari-{NormalizationExtensions.TurkeyNowUtcOffset():yyyyMMdd-HHmm}.csv";
         return File(result.Data, "text/csv; charset=utf-8", fileName);
     }
 }

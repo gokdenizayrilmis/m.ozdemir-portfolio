@@ -1,3 +1,4 @@
+using Clinic.Application.Common.Extensions;
 using Clinic.Application.Common.Interfaces;
 using Clinic.Application.Common.Models;
 using Clinic.Domain.Entities;
@@ -90,7 +91,7 @@ public class CreateBlogCommandHandler : IRequestHandler<CreateBlogCommand, Resul
 
     public async Task<Result<BlogPost>> Handle(CreateBlogCommand request, CancellationToken cancellationToken)
     {
-        var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
+        var normalizedSlug = request.Slug.ToNormalizedSlug();
         if (await _repository.ExistsBySlugAsync(normalizedSlug, null, cancellationToken))
         {
             return Result<BlogPost>.Failure($"'{normalizedSlug}' URL slug değeri zaten başka bir blog yazısında kullanılıyor.");
@@ -168,7 +169,7 @@ public class UpdateBlogCommandHandler : IRequestHandler<UpdateBlogCommand, Resul
         }
 
         var oldSlug = existing.Slug;
-        var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
+        var normalizedSlug = request.Slug.ToNormalizedSlug();
         if (await _repository.ExistsBySlugAsync(normalizedSlug, request.Id, cancellationToken))
         {
             return Result<BlogPost>.Failure($"'{normalizedSlug}' URL slug değeri başka bir blog yazısında kullanılıyor.");
@@ -223,11 +224,7 @@ public class DeleteBlogCommandHandler : IRequestHandler<DeleteBlogCommand, Resul
 
         await _repository.DeleteAsync(request.Id, cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(existing.CoverImageUrl) &&
-            !existing.CoverImageUrl.Contains("/uploads/corporate/", StringComparison.OrdinalIgnoreCase))
-        {
-            await _imageStorageService.DeleteImageAsync(existing.CoverImageUrl, cancellationToken);
-        }
+        await _imageStorageService.DeleteNonCorporateImageIfAnyAsync(existing.CoverImageUrl, cancellationToken);
 
         await _revalidationService.RevalidatePathsAsync(new[] { "/", "/blog", $"/blog/{existing.Slug}" }, cancellationToken);
 
