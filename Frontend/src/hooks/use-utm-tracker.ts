@@ -56,20 +56,34 @@ export function trackConversionClick(
   const utm = getStoredUtmData();
 
   try {
-    // 1. Fire GTM / GA4 dataLayer event for Google Ads Smart Bidding
-    if (
-      typeof window !== 'undefined' &&
-      (window as unknown as { dataLayer?: unknown[] }).dataLayer
-    ) {
-      (window as unknown as { dataLayer: unknown[] }).dataLayer.push({
-        event:
-          conversionType === 'WhatsAppClick'
-            ? 'whatsapp_conversion'
-            : 'phone_conversion',
+    // 1. Fire GTM / GA4 dataLayer & gtag event for Google Ads Smart Bidding
+    if (typeof window !== 'undefined') {
+      const eventName =
+        conversionType === 'WhatsAppClick'
+          ? 'whatsapp_conversion'
+          : 'phone_conversion';
+      const eventParams = {
         conversion_type: conversionType,
         source_page: currentPath,
-        utm_campaign: utm.utmCampaign,
+        utm_source: utm.utmSource || 'direct',
+        utm_medium: utm.utmMedium || 'none',
+        utm_campaign: utm.utmCampaign || 'organic',
+      };
+
+      const win = window as unknown as {
+        dataLayer?: unknown[];
+        gtag?: (command: string, action: string, params: Record<string, unknown>) => void;
+      };
+
+      win.dataLayer = win.dataLayer || [];
+      win.dataLayer.push({
+        event: eventName,
+        ...eventParams,
       });
+
+      if (typeof win.gtag === 'function') {
+        win.gtag('event', eventName, eventParams);
+      }
     }
 
     // 2. Non-blocking micro-conversion tracking via central leadService

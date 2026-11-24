@@ -1,8 +1,10 @@
+import { Suspense } from 'react';
 import Header from '@/components/public/Header';
 import Footer from '@/components/public/Footer';
 import StickyMobileBar from '@/components/public/StickyMobileBar';
 import JsonLdSchema from '@/components/public/JsonLdSchema';
 import UtmInitializer from '@/components/public/UtmInitializer';
+import AnalyticsScripts from '@/components/public/AnalyticsScripts';
 import MotionProvider from '@/components/public/MotionProvider';
 import { categoryService, settingsService, treatmentService } from '@/services';
 
@@ -22,6 +24,12 @@ export default async function PublicLayout({
 
   return (
     <MotionProvider>
+      <Suspense fallback={null}>
+        <AnalyticsScripts
+          gtmId={settings?.googleTagManagerId}
+          ga4Id={settings?.googleAnalyticsId}
+        />
+      </Suspense>
       <UtmInitializer />
       <JsonLdSchema type="Clinic" settings={settings} />
       <Header
