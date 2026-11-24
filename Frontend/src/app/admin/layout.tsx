@@ -8,6 +8,7 @@ import AdminSidebar, {
   SETTINGS_SUB_ITEMS,
 } from '@/components/admin/AdminSidebar';
 import { AdminToastProvider } from '@/components/admin/AdminToast';
+import AdminNetworkIndicator from '@/components/admin/AdminNetworkIndicator';
 import { authService } from '@/services';
 import { ChevronRight, ExternalLink, Loader2, Menu } from 'lucide-react';
 
@@ -147,7 +148,10 @@ export default function AdminLayout({
     return (
       <LazyMotion features={domMax}>
         <MotionConfig reducedMotion="user">
-          <div className={fontWrapperClass}>{children}</div>
+          <div className={fontWrapperClass}>
+            {children}
+            <AdminNetworkIndicator />
+          </div>
         </MotionConfig>
       </LazyMotion>
     );
@@ -168,6 +172,7 @@ export default function AdminLayout({
     <LazyMotion features={domMax}>
       <MotionConfig reducedMotion="user">
         <AdminToastProvider>
+          <AdminNetworkIndicator />
           <div
             className={`${fontWrapperClass} min-h-screen bg-slate-50/70 flex flex-col lg:flex-row`}
           >

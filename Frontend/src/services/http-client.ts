@@ -1,5 +1,9 @@
 import { API_BASE_URL, API_ENDPOINTS } from '@/constants/api-endpoints';
 import { AdminAuthResponse, Result } from '@/types';
+import {
+  networkActivity,
+  resolveActivityKind,
+} from '@/utils/network-activity';
 
 export const ADMIN_TOKEN_STORAGE_KEY = 'clinic_admin_token';
 
@@ -8,6 +12,7 @@ let inMemoryAccessToken: string | null = null;
 export interface HttpRequestOptions extends RequestInit {
   timeoutMs?: number;
   _isRetry?: boolean;
+  skipActivityIndicator?: boolean;
 }
 
 class HttpClient {
@@ -76,6 +81,11 @@ class HttpClient {
   private async performSilentRefresh(): Promise<string | null> {
     const controller = new AbortController();
     const timerId = setTimeout(() => controller.abort(), 5000);
+    const trackActivity = typeof window !== 'undefined';
+
+    if (trackActivity) {
+      networkActivity.startRequest('auth');
+    }
 
     try {
       const url = this.getFullUrl(API_ENDPOINTS.AUTH.REFRESH);
@@ -105,6 +115,9 @@ class HttpClient {
       return null;
     } finally {
       clearTimeout(timerId);
+      if (trackActivity) {
+        networkActivity.endRequest();
+      }
     }
   }
 
@@ -112,7 +125,12 @@ class HttpClient {
     endpoint: string,
     options: HttpRequestOptions = {}
   ): Promise<Result<T>> {
-    const { timeoutMs = 3500, _isRetry = false, ...fetchOptions } = options;
+    const {
+      timeoutMs = 3500,
+      _isRetry = false,
+      skipActivityIndicator = false,
+      ...fetchOptions
+    } = options;
     const url = this.getFullUrl(endpoint);
 
     const headers = new Headers(fetchOptions.headers || {});
@@ -138,6 +156,13 @@ class HttpClient {
 
     const controller = new AbortController();
     const timerId = setTimeout(() => controller.abort(), timeoutMs);
+    const trackActivity = isClient && !skipActivityIndicator;
+
+    if (trackActivity) {
+      networkActivity.startRequest(
+        resolveActivityKind(endpoint, fetchOptions.method)
+      );
+    }
 
     try {
       const res = await fetch(url, {
@@ -225,6 +250,9 @@ class HttpClient {
       };
     } finally {
       clearTimeout(timerId);
+      if (trackActivity) {
+        networkActivity.endRequest();
+      }
     }
   }
 
