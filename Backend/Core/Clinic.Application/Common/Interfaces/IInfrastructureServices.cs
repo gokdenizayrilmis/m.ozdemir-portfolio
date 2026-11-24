@@ -25,7 +25,7 @@ public static class ImageStorageExtensions
 
 public interface IJwtTokenGenerator
 {
-    int RefreshTokenExpiryDays { get; }
+    int RefreshTokenExpiryHours { get; }
     string GenerateToken(string userId, string email, string fullName, string role);
     string GenerateRefreshToken();
     string HashToken(string rawToken);

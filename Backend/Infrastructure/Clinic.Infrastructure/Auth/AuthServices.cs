@@ -18,7 +18,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _jwtSettings = jwtOptions.Value;
     }
 
-    public int RefreshTokenExpiryDays => _jwtSettings.RefreshTokenExpiryDays;
+    public int RefreshTokenExpiryHours => _jwtSettings.RefreshTokenExpiryHours;
 
     public string GenerateToken(string userId, string email, string fullName, string role)
     {

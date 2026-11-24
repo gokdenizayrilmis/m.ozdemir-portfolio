@@ -8,7 +8,7 @@ public class JwtSettings
     public string Issuer { get; set; } = "Clinic.WebAPI";
     public string Audience { get; set; } = "Clinic.NextJsClient";
     public int ExpiryMinutes { get; set; } = 15;
-    public int RefreshTokenExpiryDays { get; set; } = 7;
+    public int RefreshTokenExpiryHours { get; set; } = 8;
 }
 
 public class NextJsSettings

@@ -23,8 +23,8 @@ internal static class AuthSessionHelper
 
         var rawRefreshToken = jwtTokenGenerator.GenerateRefreshToken();
         var refreshTokenHash = jwtTokenGenerator.HashToken(rawRefreshToken);
-        var refreshExpiryDays = jwtTokenGenerator.RefreshTokenExpiryDays > 0 ? jwtTokenGenerator.RefreshTokenExpiryDays : 7;
-        var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(refreshExpiryDays);
+        var refreshExpiryHours = jwtTokenGenerator.RefreshTokenExpiryHours > 0 ? jwtTokenGenerator.RefreshTokenExpiryHours : 8;
+        var refreshTokenExpiresAt = DateTime.UtcNow.AddHours(refreshExpiryHours);
 
         var refreshTokenEntity = new RefreshToken
         {
