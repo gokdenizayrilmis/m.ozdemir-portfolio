@@ -289,12 +289,12 @@ export default function AdminOverviewDashboard() {
 
   const handleExportCsv = async () => {
     setExporting(true);
-    const ok = await leadService.downloadCsv(tableRange);
+    const ok = await leadService.downloadCsv(range);
     setExporting(false);
     if (ok) {
-      showToast('CSV dönüşüm raporu indirildi.', 'success');
+      showToast('Excel (.xlsx) dönüşüm raporu indirildi.', 'success');
     } else {
-      showToast('CSV raporu indirilirken bir hata oluştu.', 'error');
+      showToast('Excel raporu indirilirken bir hata oluştu.', 'error');
     }
   };
 
@@ -426,7 +426,7 @@ export default function AdminOverviewDashboard() {
             })}
           </div>
 
-          {/* CSV Export Button */}
+          {/* Excel (.xlsx) Export Button */}
           <button
             type="button"
             onClick={handleExportCsv}
@@ -438,7 +438,7 @@ export default function AdminOverviewDashboard() {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            <span>CSV İndir</span>
+            <span>Excel Raporu</span>
           </button>
         </div>
       </div>

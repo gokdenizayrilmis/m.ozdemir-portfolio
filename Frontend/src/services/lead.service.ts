@@ -74,7 +74,7 @@ export const leadService = {
     );
   },
 
-  async downloadCsv(range: LeadRangeFilter = 'all', type?: string): Promise<boolean> {
+  async downloadCsv(range: LeadRangeFilter = '30d', type?: string): Promise<boolean> {
     if (typeof window === 'undefined') return false;
 
     const endpoint = API_ENDPOINTS.LEADS.EXPORT(range, type);
@@ -103,7 +103,7 @@ export const leadService = {
     const downloadUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.download = `donusum-raporu-${range}-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `donusum-raporu-${range}-${new Date().toISOString().slice(0, 10)}.xlsx`;
     document.body.appendChild(link);
     link.click();
     link.remove();

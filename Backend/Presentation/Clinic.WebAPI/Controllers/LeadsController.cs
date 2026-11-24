@@ -54,7 +54,7 @@ public class LeadsController : BaseApiController
     [HttpGet("export")]
     [EnableRateLimiting(RateLimitPolicies.AdminHeavy)]
     public async Task<IActionResult> ExportCsv(
-        [FromQuery] string range = "all",
+        [FromQuery] string range = "30d",
         [FromQuery] string? type = null,
         CancellationToken cancellationToken = default)
     {
@@ -64,7 +64,10 @@ public class LeadsController : BaseApiController
             return BadRequest(result);
         }
 
-        var fileName = $"donusum-kayitlari-{NormalizationExtensions.TurkeyNowUtcOffset():yyyyMMdd-HHmm}.csv";
-        return File(result.Data, "text/csv; charset=utf-8", fileName);
+        var fileName = $"donusum-raporu-{range}-{NormalizationExtensions.TurkeyNowUtcOffset():yyyyMMdd-HHmm}.xlsx";
+        return File(
+            result.Data,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            fileName);
     }
 }
