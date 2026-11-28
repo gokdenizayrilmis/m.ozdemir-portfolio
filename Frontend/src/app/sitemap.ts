@@ -2,7 +2,9 @@ import { MetadataRoute } from 'next';
 import { treatmentService, categoryService, blogService } from '@/services';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://drmustafaozdemir.com';
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://drmustafaozdemir.com'
+  ).replace(/\/$/, '');
 
   const [treatments, categories, blogs] = await Promise.all([
     treatmentService.getAll(),

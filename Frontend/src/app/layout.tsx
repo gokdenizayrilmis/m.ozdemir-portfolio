@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+const siteUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://drmustafaozdemir.com'
+).replace(/\/$/, '');
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://drmustafaozdemir.com'),
+  metadataBase: new URL(siteUrl),
   title: {
     default: 'Prof. Dr. Mustafa Özdemir | Dermatoloji & Lazer Kliniği Bakırköy',
     template: '%s | Prof. Dr. Mustafa Özdemir',

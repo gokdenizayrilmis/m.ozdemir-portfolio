@@ -169,11 +169,32 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // 4. Configure CORS for Next.js Frontend (Specific origins required for AllowCredentials)
-var configuredOrigins = builder.Configuration
-    .GetSection("CorsSettings:AllowedOrigins")
-    .Get<string[]>() ?? Array.Empty<string>();
+var configuredOriginsList = new List<string>();
 
-var allowedOrigins = configuredOrigins
+var arrayOrigins = builder.Configuration
+    .GetSection("CorsSettings:AllowedOrigins")
+    .Get<string[]>();
+if (arrayOrigins is { Length: > 0 })
+{
+    configuredOriginsList.AddRange(arrayOrigins);
+}
+
+// Also support comma-separated origins via env vars (e.g. CorsSettings__AllowedOrigins or CorsSettings__AllowedOriginsCsv)
+var rawCsvOrigins = string.Join(",",
+    new[]
+    {
+        builder.Configuration["CorsSettings:AllowedOrigins"],
+        builder.Configuration["CorsSettings:AllowedOriginsCsv"]
+    }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+if (!string.IsNullOrWhiteSpace(rawCsvOrigins))
+{
+    configuredOriginsList.AddRange(
+        rawCsvOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+}
+
+var allowedOrigins = configuredOriginsList
+    .Select(o => o.Trim().TrimEnd('/'))
     .Where(o => !string.IsNullOrWhiteSpace(o) && o != "*")
     .Distinct(StringComparer.OrdinalIgnoreCase)
     .ToArray();
@@ -238,6 +259,11 @@ app.UseCors(NextJsCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+
+// Lightweight health check endpoint for Render (exempt from auth and rate limiting)
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
+   .AllowAnonymous()
+   .DisableRateLimiting();
 
 app.MapControllers();
 

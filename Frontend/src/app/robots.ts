@@ -1,7 +1,22 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://drmustafaozdemir.com';
+  const allowIndexing = process.env.NEXT_PUBLIC_ALLOW_INDEXING === 'true';
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://drmustafaozdemir.com'
+  ).replace(/\/$/, '');
+
+  // Prevent search engines from indexing temporary staging / *.vercel.app URLs
+  if (!allowIndexing) {
+    return {
+      rules: [
+        {
+          userAgent: '*',
+          disallow: '/',
+        },
+      ],
+    };
+  }
 
   return {
     rules: [
@@ -14,4 +29,3 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
-

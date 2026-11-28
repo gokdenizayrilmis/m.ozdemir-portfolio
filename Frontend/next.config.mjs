@@ -5,6 +5,21 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: '**.onrender.com',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'drmustafaozdemir.com',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.drmustafaozdemir.com',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
         hostname: '**',
       },
       {
